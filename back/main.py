@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import os
 import sys
 import json
@@ -15,6 +16,7 @@ from fastapi.responses import JSONResponse, FileResponse, StreamingResponse, HTM
 from fastapi.staticfiles import StaticFiles
 
 # Add the parent directory to sys.path
+load_dotenv()
 current_dir = Path(__file__).parent
 parent_dir = current_dir.parent
 sys.path.insert(0, str(parent_dir))
