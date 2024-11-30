@@ -7,9 +7,10 @@ import asyncio
 import os
 from pathlib import Path
 import base64
-from server.models import Task, DesignRequest, TaskStatus
+from models.task import Task, TaskStatus
+from models.design import DesignRequest
 import json
-from server.utils import serialize_datetime
+from function.common import serialize_datetime
 from PIL import Image
 import io
 import time
