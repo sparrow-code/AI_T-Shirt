@@ -19,7 +19,8 @@ current_dir = Path(__file__).parent
 parent_dir = current_dir.parent
 sys.path.insert(0, str(parent_dir))
 
-from models.models import Task, DesignRequest, TaskStatus
+from models.task import Task, TaskStatus
+from models.design import DesignRequest
 from utils.task_queue import TaskQueue
 from function.common import serialize_datetime
 
