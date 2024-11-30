@@ -151,11 +151,11 @@ async def get_status(task_id: str):
         logger.error(f"Error getting status: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/images/{image_name}")
+@app.get("/images/name/{image_name}")
 async def get_image(image_name: str):
     """Serve generated images"""
     try:
-        image_path = OUTPUTS_DIR / image_name
+        image_path = OUTPUTS_DIR / image_name + ".png"
         logger.info(f"Attempting to serve image: {image_path}")
         
         if not image_path.exists():
