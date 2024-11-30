@@ -703,8 +703,10 @@ if __name__ == "__main__":
     
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", 8000))
+    stage = os.getenv("STAGE", "DEV")
+    print(f"Server is running on {host}:{port}")
         
-    if os.getenv("STAGE") == "dev":
+    if os.getenv("STAGE") == "DEV":
         from pyngrok import ngrok
         public_url = ngrok.connect(port)
         print(f"FastAPI is accessible at: {public_url}")
