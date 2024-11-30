@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timedelta
 import uuid
 from typing import Optional, Dict, List, Tuple, Any
@@ -7,6 +6,7 @@ import asyncio
 import os
 from pathlib import Path
 import base64
+from const import *
 from models.task import Task, TaskStatus
 from models.design import DesignRequest
 import json
@@ -15,10 +15,8 @@ from PIL import Image
 import io
 import time
 
-logger = logging.getLogger(__name__)
-
 class TaskQueue:
-    def __init__(self):
+    def __init__(self, logger):
         self.tasks = {}  # type: Dict[str, Task]
         self.pending_tasks = []  # type: List[Task]
         self.processing_tasks = {}  # type: Dict[str, Task]
@@ -30,11 +28,14 @@ class TaskQueue:
         self.api_timeout = 120  # 2 minutes for API requests
         
         # Get root directory and set up outputs directory
-        self.root_dir = Path(__file__).parent.parent.resolve()
-        self.outputs_dir = self.root_dir / "outputs"
+        self.outputs_dir = OUTPUTS_DIR
         self.outputs_dir.mkdir(exist_ok=True)
         
-        logger.info(f"Outputs directory: {self.outputs_dir}")
+        self.logger = logger
+
+
+        
+        self.logger.info(f"Outputs directory: {self.outputs_dir}")
 
     async def save_image(self, image_data: bytes, task_id: str) -> Tuple[str, str]:
         """Save image data to a file and return the filename and base64 data"""
@@ -44,7 +45,7 @@ class TaskQueue:
         # Ensure the directory exists
         self.outputs_dir.mkdir(exist_ok=True)
         
-        logger.info(f"Saving image to: {filepath}")
+        self.logger.info(f"Saving image to: {filepath}")
         try:
             # Convert image data to PIL Image
             image = Image.open(io.BytesIO(image_data))
@@ -55,17 +56,17 @@ class TaskQueue:
             
             # Convert to base64
             base64_data = base64.b64encode(image_data).decode('utf-8')
-            logger.info(f"Image converted to base64 (length: {len(base64_data)})")
+            self.logger.info(f"Image converted to base64 (length: {len(base64_data)})")
             
             # Verify the file was saved
             if not filepath.exists():
                 raise Exception(f"Failed to save image to {filepath}")
                 
-            logger.info(f"Image saved successfully: {filepath}")
+            self.logger.info(f"Image saved successfully: {filepath}")
             return filename, base64_data
             
         except Exception as e:
-            logger.error(f"Error saving image: {str(e)}")
+            self.logger.error(f"Error saving image: {str(e)}")
             raise
 
     async def try_api_generation(self, task: Task) -> Optional[bytes]:
@@ -90,16 +91,16 @@ class TaskQueue:
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(self.api_url, headers=self.api_headers, json=payload) as response:
                     if response.status != 200:
-                        logger.warning(f"API request failed with status {response.status}")
+                        self.logger.warning(f"API request failed with status {response.status}")
                         return None
                     
                     data = await response.content.read()
                     if data and len(data) > 0:
-                        logger.info(f"Received image data from API (size: {len(data)} bytes)")
+                        self.logger.info(f"Received image data from API (size: {len(data)} bytes)")
                         return data
                     return None
         except Exception as e:
-            logger.error(f"API request failed: {str(e)}")
+            self.logger.error(f"API request failed: {str(e)}")
             return None
 
     async def add_task(self, request: DesignRequest) -> str:
@@ -114,7 +115,7 @@ class TaskQueue:
         self.tasks[task_id] = task
         
         # Try API generation first
-        logger.info(f"Attempting API generation for task {task_id}")
+        self.logger.info(f"Attempting API generation for task {task_id}")
         task.status = TaskStatus.PROCESSING
         task.started_at = datetime.utcnow()
         
@@ -133,9 +134,9 @@ class TaskQueue:
                     "source": "api"
                 }
                 self.completed_tasks[task_id] = task.result
-                logger.info(f"API generation successful for task {task_id}")
+                self.logger.info(f"API generation successful for task {task_id}")
             except Exception as e:
-                logger.error(f"Failed to save image for task {task_id}: {str(e)}")
+                self.logger.error(f"Failed to save image for task {task_id}: {str(e)}")
                 task.status = TaskStatus.FAILED
                 task.result = {"error": str(e)}
                 self.failed_tasks.add(task_id)
@@ -143,7 +144,7 @@ class TaskQueue:
             task.status = TaskStatus.FAILED
             task.result = {"error": "API generation failed"}
             self.failed_tasks.add(task_id)
-            logger.info(f"API generation failed for task {task_id}")
+            self.logger.info(f"API generation failed for task {task_id}")
         
         return task_id
 
@@ -157,7 +158,7 @@ class TaskQueue:
         task.status = TaskStatus.PROCESSING
         task.started_at = datetime.utcnow()
         
-        logger.info(f"Task {task.id} moved to processing")
+        self.logger.info(f"Task {task.id} moved to processing")
         return task
 
     async def get_task_status(self, task_id: str) -> Optional[dict]:
@@ -187,7 +188,7 @@ class TaskQueue:
     async def update_task_status(self, task_id: str, status: TaskStatus, result: Optional[dict] = None):
         task = self.tasks.get(task_id)
         if not task:
-            logger.error(f"Task not found: {task_id}")
+            self.logger.error(f"Task not found: {task_id}")
             return
             
         task.status = status
@@ -204,7 +205,7 @@ class TaskQueue:
                             image_data = f.read()
                             result['image_data'] = f"data:image/png;base64,{base64.b64encode(image_data).decode('utf-8')}"
                     except Exception as e:
-                        logger.error(f"Error reading image data: {str(e)}")
+                        self.logger.error(f"Error reading image data: {str(e)}")
                 
                 task.result = result
                 self.completed_tasks[task_id] = result
@@ -212,7 +213,7 @@ class TaskQueue:
             task.result = result or {"error": "Unknown error"}
             self.failed_tasks.add(task_id)
             
-        logger.info(f"Updated task {task_id} status to {status}")
+        self.logger.info(f"Updated task {task_id} status to {status}")
 
     async def cleanup_timed_out_tasks(self):
         """Clean up tasks that have timed out"""
@@ -264,5 +265,5 @@ class TaskQueue:
             await asyncio.sleep(0.5)
             
         # Timeout reached
-        logger.warning(f"Task {task_id} timed out after {timeout} seconds")
+        self.logger.warning(f"Task {task_id} timed out after {timeout} seconds")
         return None

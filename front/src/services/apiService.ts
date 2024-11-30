@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 
 const dev_url = "http://localhost:8000" // "https://6684-34-30-83-29.ngrok-free.app/"
 const isDevelopment = import.meta.env.MODE === 'development';
-const API_BASE_URL = isDevelopment ? 'https://6684-34-30-83-29.ngrok-free.app' : 'https://aitshirts.in/api';
+const API_BASE_URL = isDevelopment ? 'https://a1b5-35-196-52-236.ngrok-free.app' : 'https://aitshirts.in/api';
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1000; // 1 second
 
@@ -63,7 +63,7 @@ class ApiService {
     }
 
     const status = error.response.status;
-    const message = error.response.data?.detail || error.message;
+    const message = error.response?.data?.detail || error.message;
 
     switch (status) {
       case 400:

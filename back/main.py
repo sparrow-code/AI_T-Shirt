@@ -18,18 +18,19 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse, StreamingResponse, HTMLResponse
 
-# Add the parent directory to sys.path
-load_dotenv()
-current_dir = Path(__file__).parent
-parent_dir = current_dir.parent
-sys.path.insert(0, str(parent_dir))
-
+# Function Are Imported Here
 from models.task import TaskStatus
 from models.design import DesignRequest
 from utils.task_queue import TaskQueue
 from function.common import serialize_datetime
 
+# Services Are Imported Here
+from controller.info import BasicInfoController
 
+load_dotenv()
+current_dir = Path(__file__).parent
+parent_dir = current_dir.parent
+sys.path.insert(0, str(parent_dir))
 
 # Initialize directories and logging
 setup_directories()
@@ -59,16 +60,15 @@ app.add_middleware(
 # Mount static files directory
 app.mount("/images", CORSStaticFiles(directory=str(OUTPUTS_DIR)), name="images")
 
-# Initialize task queue
-task_queue = TaskQueue()
 design_history: list = []
 
 # Connected workers
 connected_workers: Dict[str, WebSocket] = {}
 
 # init class service
-from controller.info import BasicInfoController
+task_queue = TaskQueue(logger)
 basicInfo = BasicInfoController(logger, connected_workers, task_queue)
+
 
 @app.get("/")
 async def root():
