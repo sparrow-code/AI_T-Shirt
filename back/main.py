@@ -68,6 +68,7 @@ connected_workers: Dict[str, WebSocket] = {}
 
 # init class service
 from controller.info import BasicInfoController
+basicInfo = BasicInfoController(logger, connected_workers, task_queue)
 
 @app.get("/")
 async def root():
@@ -76,32 +77,11 @@ async def root():
 
 @app.get("/health")
 async def health_check() : 
-    return await BasicInfoController.health_check_controller(connected_workers, task_queue)
+    return await basicInfo.health_check_controller()
 
 @app.get("/status")
 async def service_status():
-    """Get detailed service status"""
-    try:
-        return {
-            "status": "online",
-            "workers": {
-                "connected": len(connected_workers),
-                "ids": list(connected_workers.keys())
-            },
-            "queue": {
-                "size": task_queue.size(),
-                "pending": task_queue.pending_count(),
-                "processing": task_queue.processing_count()
-            },
-            "storage": {
-                "outputs_dir": str(OUTPUTS_DIR),
-                "space_available": True  # TODO: Add actual disk space check
-            },
-            "timestamp": datetime.utcnow().isoformat()
-        }
-    except Exception as e:
-        logger.error(f"Error getting service status: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return await basicInfo.service_status_controller()
 
 @app.get("/previous-designs")
 async def get_previous_designs():
