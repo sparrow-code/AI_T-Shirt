@@ -697,13 +697,14 @@ async def websocket_worker(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
-    from pyngrok import ngrok
     
-    public_url = ngrok.connect(8000)
-    print(f"FastAPI is accessible at: {public_url}")
-        
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", 8000))
+        
+    if os.getenv("STAGE") == "dev":
+        from pyngrok import ngrok
+        public_url = ngrok.connect(port)
+        print(f"FastAPI is accessible at: {public_url}")
     
     logger.info(f"Server initialization complete. Starting server on {host}:{port}")
     
