@@ -1,4 +1,6 @@
 from dotenv import load_dotenv
+from const import *
+from utils.setup import *
 import os
 import sys
 import json
@@ -6,14 +8,15 @@ import base64
 import logging
 import uuid
 from datetime import datetime
-from pathlib import Path
+
+from utils.cors import CORSStaticFiles
+
 from typing import Optional, Dict, Set
 from fastapi.responses import RedirectResponse
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, File, UploadFile, Response, BackgroundTasks, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse, StreamingResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
 
 # Add the parent directory to sys.path
 load_dotenv()
@@ -21,37 +24,16 @@ current_dir = Path(__file__).parent
 parent_dir = current_dir.parent
 sys.path.insert(0, str(parent_dir))
 
-from models.task import Task, TaskStatus
+from models.task import TaskStatus
 from models.design import DesignRequest
 from utils.task_queue import TaskQueue
 from function.common import serialize_datetime
 
-# Get the application root directory
-ROOT_DIR = Path(__file__).parent.parent.resolve()
-OUTPUTS_DIR = ROOT_DIR / "outputs"
-LOG_DIR = ROOT_DIR / "logs"
 
-def setup_directories():
-    """Setup required directories"""
-    OUTPUTS_DIR.mkdir(exist_ok=True, parents=True)
-    LOG_DIR.mkdir(exist_ok=True)
-
-def setup_logging():
-    """Configure logging"""
-    LOG_FILE = LOG_DIR / "server.log"
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(LOG_FILE),
-            logging.StreamHandler()
-        ]
-    )
-    return logging.getLogger(__name__)
 
 # Initialize directories and logging
 setup_directories()
-logger = setup_logging()
+logger = setup_logging(logging)
 logger.info("Starting FastAPI server initialization...")
 
 # Initialize FastAPI app
@@ -73,22 +55,6 @@ app.add_middleware(
     max_age=3600
 )
 
-class CORSStaticFiles(StaticFiles):
-    async def __call__(self, scope, receive, send):
-        if scope["type"] == "http":
-            async def wrapped_send(message):
-                if message["type"] == "http.response.start":
-                    message["headers"].extend([
-                        (b"access-control-allow-origin", b"*"),
-                        (b"access-control-allow-methods", b"GET, OPTIONS"),
-                        (b"access-control-allow-headers", b"*"),
-                        (b"access-control-expose-headers", b"*"),
-                        (b"cache-control", b"no-cache"),
-                        (b"vary", b"origin"),
-                    ])
-                await send(message)
-            return await super().__call__(scope, receive, wrapped_send)
-        return await super().__call__(scope, receive, send)
 
 # Mount static files directory
 app.mount("/images", CORSStaticFiles(directory=str(OUTPUTS_DIR)), name="images")
@@ -100,6 +66,9 @@ design_history: list = []
 # Connected workers
 connected_workers: Dict[str, WebSocket] = {}
 
+# init class service
+from controller.info import BasicInfoController
+
 @app.get("/")
 async def root():
     """Root endpoint that redirects to /health"""
@@ -107,7 +76,7 @@ async def root():
 
 @app.get("/health")
 async def health_check() : 
-    return await health_check_controller()
+    return await BasicInfoController.health_check_controller(connected_workers, task_queue)
 
 @app.get("/status")
 async def service_status():
