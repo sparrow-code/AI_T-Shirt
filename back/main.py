@@ -706,7 +706,7 @@ if __name__ == "__main__":
     stage = os.getenv("STAGE", "DEV")
     logger.info(f"Stage >>> {stage}")
         
-    if os.getenv("STAGE") == "DEV":
+    if stage == "DEV":
         from pyngrok import ngrok
         public_url = ngrok.connect(port)
         logger.info(f"FastAPI is accessible at: {public_url}")
