@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 import logging
-from .models import WorkerStatus
+from .models.models import WorkerStatus
 
 logger = logging.getLogger(__name__)
 

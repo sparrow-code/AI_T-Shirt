@@ -19,9 +19,9 @@ current_dir = Path(__file__).parent
 parent_dir = current_dir.parent
 sys.path.insert(0, str(parent_dir))
 
-from server.models import Task, DesignRequest, TaskStatus
-from server.task_queue import TaskQueue
-from server.utils import serialize_datetime
+from .models.models import Task, DesignRequest, TaskStatus
+from .utils.task_queue import TaskQueue
+from .function.common import serialize_datetime
 
 # Get the application root directory
 ROOT_DIR = Path(__file__).parent.parent.resolve()
