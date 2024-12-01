@@ -1,9 +1,13 @@
 # Class Which Contain All Image Related Functions
 
 # ? Library To Work With Files
+from datetime import datetime
 import io
+import json
+import uuid
 
 # ? Library To Work With Image
+from const import OUTPUTS_DIR
 import cv2
 import base64
 import numpy as np
@@ -171,4 +175,109 @@ class ImgProcessing :
                 
         except Exception as e:
             self.logger.error(f"Error in fallback generation: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    async def save_design(self, design_data, design_history) -> bytes:
+        try:
+            if "image_data" not in design_data:
+                raise HTTPException(status_code=400, detail="No image data provided")
+
+            # Validate base64 image data
+            try:
+                image_data = design_data["image_data"]
+                if isinstance(image_data, str) and image_data.startswith('data:image'):
+                    image_data = image_data.split(',')[1]
+                import base64
+                base64.b64decode(image_data)
+            except Exception as e:
+                self.logger.error(f"Invalid image data: {str(e)}")
+                raise HTTPException(status_code=400, detail="Invalid image data")
+
+            # Add timestamp and metadata
+            design_entry = {
+                "image_data": design_data["image_data"],
+                "created_at": datetime.utcnow().isoformat(),
+                "metadata": design_data.get("metadata", {})
+            }
+
+            design_history.append(design_entry)
+            
+            # Keep only last 5 designs
+            while len(design_history) > 5:
+                design_history.pop(0)
+            
+            return {"status": "success", "timestamp": design_entry["created_at"]}
+        
+        except HTTPException:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error saving design: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    async def create_design(self, request,task_queue) -> bytes:
+        try:
+            # Add task to queue and get task ID
+            task_id = await task_queue.add_task(request)
+            self.logger.info(f"Created new task: {task_id}")
+            
+            return JSONResponse({
+                "task_id": task_id,
+                "status": "pending"
+            })
+            
+        except Exception as e:
+            self.logger.error(f"Error creating design: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+        
+    async def save_design_history(self, request) -> bytes:
+        try:
+            history_file = OUTPUTS_DIR / "history.json"
+            
+            # Load existing history or create new
+            if history_file.exists():
+                try:
+                    with open(history_file, "r") as f:
+                        history = json.load(f)
+                except json.JSONDecodeError:
+                    history = []
+            else:
+                history = []
+            
+            # Create new history item
+            new_item = {
+                "id": str(uuid.uuid4()),
+                "image_data": request["image_data"],
+                "prompt": request.get("prompt", ""),
+                "created_at": datetime.utcnow().isoformat(),
+                "transform": request.get("transform", None)
+            }
+            
+            # Add to history and save
+            history.append(new_item)
+            with open(history_file, "w") as f:
+                json.dump(history, f)
+                
+            return JSONResponse({"status": "success", "id": new_item["id"]})
+            
+        except Exception as e:
+            self.logger.error(f"Error saving to history: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    async def get_design_history(self) -> bytes:
+        try:
+            history_file = OUTPUTS_DIR / "history.json"
+            if not history_file.exists():
+                return JSONResponse([])  # Return empty array if no history exists
+                
+            try:
+                with open(history_file, "r") as f:
+                    history = json.load(f)
+                    # Return the last 10 designs, most recent first
+                    return JSONResponse(history[-10:])
+            except json.JSONDecodeError:
+                self.logger.error("Error decoding history file")
+                return JSONResponse([])
+                
+        except Exception as e:
+            self.logger.error(f"Error fetching design history: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
