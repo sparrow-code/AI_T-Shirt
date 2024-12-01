@@ -26,6 +26,7 @@ from function.common import serialize_datetime
 
 # Services Are Imported Here
 from controller.info import BasicInfoController
+from controller.img import ImgProcessing
 
 load_dotenv()
 current_dir = Path(__file__).parent
@@ -67,7 +68,9 @@ connected_workers: Dict[str, WebSocket] = {}
 
 # init class service
 task_queue = TaskQueue(logger)
-basicInfo = BasicInfoController(logger, connected_workers, task_queue)
+BasicInfoService = BasicInfoController(logger, connected_workers, task_queue)
+ImageService = ImgProcessing(logger)
+
 
 
 @app.get("/")
@@ -77,11 +80,11 @@ async def root():
 
 @app.get("/health")
 async def health_check() : 
-    return await basicInfo.health_check_controller()
+    return await BasicInfoService.health_check_controller()
 
 @app.get("/status")
 async def service_status():
-    return await basicInfo.service_status_controller()
+    return await BasicInfoService.service_status_controller()
 
 @app.get("/previous-designs")
 async def get_previous_designs():
@@ -151,60 +154,11 @@ async def get_status(task_id: str):
         logger.error(f"Error getting status: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/images/name/{image_name}")
-async def get_image(image_name: str):
-    """Serve generated images"""
-    try:
-        image_path = OUTPUTS_DIR / image_name + ".png"
-        logger.info(f"Attempting to serve image: {image_path}")
-        
-        if not image_path.exists():
-            logger.error(f"Image not found: {image_path}")
-            raise HTTPException(status_code=404, detail="Image not found")
-        
-        logger.info(f"Serving image: {image_path}")
-        return FileResponse(
-            str(image_path),
-            media_type="image/png",
-            headers={
-                "Cache-Control": "public, max-age=3600",
-                "Access-Control-Allow-Origin": "*"
-            }
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error serving image: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/remove-background")
 async def remove_background(request: dict = Body(...)):
     """Remove background from uploaded image"""
-    try:
-        # Lazy import heavy libraries
-        import io
-        from PIL import Image
-        from rembg import remove
-        import numpy as np
+    return await ImageService.remove_bg(request)
         
-        # Decode base64 image
-        image_data = base64.b64decode(request["image"])
-        input_image = Image.open(io.BytesIO(image_data))
-        
-        # Remove background
-        output_image = remove(input_image)
-        
-        # Convert back to base64
-        img_byte_arr = io.BytesIO()
-        output_image.save(img_byte_arr, format='PNG')
-        img_byte_arr = img_byte_arr.getvalue()
-        
-        return JSONResponse({
-            "image": f"data:image/png;base64,{base64.b64encode(img_byte_arr).decode('utf-8')}"
-        })
-    except Exception as e:
-        logger.error(f"Error in background removal: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/color-transparency")
 async def color_transparency(
@@ -213,120 +167,17 @@ async def color_transparency(
     tolerance: float = Form(0.5)
 ):
     """Make specific color transparent"""
-    try:
-        # Lazy import heavy libraries
-        import io
-        import cv2
-        import numpy as np
-        from PIL import Image
-        
-        # Process image
-        contents = await file.read()
-        nparr = np.frombuffer(contents, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        # Convert hex color to BGR
-        color = color.lstrip('#')
-        rgb = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
-        bgr = (rgb[2], rgb[1], rgb[0])
-        
-        # Create mask for the specified color
-        mask = cv2.inRange(img, 
-                          np.array([max(0, x - int(tolerance * 255)) for x in bgr]),
-                          np.array([min(255, x + int(tolerance * 255)) for x in bgr]))
-        
-        # Add alpha channel
-        b, g, r = cv2.split(img)
-        alpha = cv2.bitwise_not(mask)
-        img_rgba = cv2.merge((b, g, r, alpha))
-        
-        # Convert to PNG
-        is_success, buffer = cv2.imencode(".png", img_rgba)
-        if not is_success:
-            raise HTTPException(status_code=500, detail="Failed to encode image")
-        
-        return Response(content=buffer.tobytes(), media_type="image/png")
-    except Exception as e:
-        logger.error(f"Error in color transparency: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return await ImageService.color_transparency(file, color, tolerance)
 
 @app.post("/adjust-transparency")
 async def adjust_transparency(request: dict = Body(...)):
     """Make image transparent based on transparency value"""
-    try:
-        # Lazy import heavy libraries
-        import io
-        import cv2
-        import numpy as np
-        from PIL import Image
-        
-        # Decode base64 image
-        image_data = base64.b64decode(request["image"])
-        nparr = np.frombuffer(image_data, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
-        
-        # If image doesn't have alpha channel, add it
-        if img.shape[2] == 3:
-            b, g, r = cv2.split(img)
-            alpha = np.ones(b.shape, dtype=b.dtype) * 255
-            img = cv2.merge((b, g, r, alpha))
-            
-        # Adjust alpha channel
-        b, g, r, a = cv2.split(img)
-        transparency = float(request["transparency"])
-        alpha = cv2.multiply(a, 1 - transparency)
-        img_rgba = cv2.merge((b, g, r, alpha.astype(np.uint8)))
-        
-        # Convert to PNG
-        is_success, buffer = cv2.imencode(".png", img_rgba)
-        if not is_success:
-            raise HTTPException(status_code=500, detail="Failed to encode image")
-            
-        # Convert to base64
-        img_base64 = base64.b64encode(buffer).decode('utf-8')
-        
-        return JSONResponse({
-            "image": f"data:image/png;base64,{img_base64}"
-        })
-    except Exception as e:
-        logger.error(f"Error adjusting transparency: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return await ImageService.adjust_transparency(request)
 
 @app.post("/generate")
 async def generate_design(request: dict = Body(...)):
-    """Primary endpoint for design generation"""
-    try:
-        design_request = DesignRequest(
-            prompt=request["prompt"],
-            style=request.get("style", "realistic"),
-            colors=request.get("colors", []),
-            size=request.get("size", "M"),
-            priority=request.get("priority", 1)
-        )
-        
-        # Add task to queue and get task ID
-        task_id = await task_queue.add_task(design_request)
-        logger.info(f"Created new task: {task_id}")
-        
-        # Wait for the result (with timeout)
-        result = await task_queue.wait_for_result(task_id, timeout=120)  # Increased timeout to 120 seconds
-        
-        if result and result.get("image_data"):
-            return JSONResponse({
-                "result": {
-                    "image_data": result["image_data"],
-                    "task_id": task_id
-                }
-            })
-        else:
-            raise HTTPException(
-                status_code=500,
-                detail="Design generation failed or timed out. The server is taking longer than expected to respond."
-            )
-            
-    except Exception as e:
-        logger.error(f"Error generating design: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+   """Primary endpoint for design generation"""
+   return await ImageService.generate_image(request, task_queue)
 
 @app.post("/designs/generate-fallback")
 async def generate_design_fallback(request: dict = Body(...)):
