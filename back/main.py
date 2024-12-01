@@ -68,7 +68,7 @@ connected_workers: Dict[str, WebSocket] = {}
 
 # init class service
 task_queue = TaskQueue(logger)
-BasicInfoService = BasicInfoController(logger, connected_workers, task_queue)
+BasicInfoService = BasicInfoController(logger)
 ImageService = ImgProcessing(logger)
 
 
