@@ -80,11 +80,11 @@ async def root():
 
 @app.get("/health")
 async def health_check() : 
-    return await BasicInfoService.health_check_controller()
+    return await BasicInfoService.health_check_controller(task_queue, connected_workers)
 
 @app.get("/status")
 async def service_status():
-    return await BasicInfoService.service_status_controller()
+    return await BasicInfoService.service_status_controller( task_queue, connected_workers)
 
 @app.get("/previous-designs")
 async def get_previous_designs():
@@ -140,19 +140,7 @@ async def save_design(design_data: dict):
 @app.get("/status/{task_id}")
 async def get_status(task_id: str):
     """Get the status of a design request"""
-    try:
-        status = await task_queue.get_task_status(task_id)
-        if not status:
-            logger.error(f"Task not found: {task_id}")
-            raise HTTPException(status_code=404, detail="Task not found")
-        
-        logger.info(f"Task status: {json.dumps(status)}")
-        return JSONResponse(status)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting status: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return await BasicInfoService.status(task_queue, task_id)
 
 @app.post("/remove-background")
 async def remove_background(request: dict = Body(...)):
@@ -182,34 +170,7 @@ async def generate_design(request: dict = Body(...)):
 @app.post("/designs/generate-fallback")
 async def generate_design_fallback(request: dict = Body(...)):
     """Fallback endpoint for design generation with simplified parameters"""
-    try:
-        design_request = DesignRequest(
-            prompt=request["prompt"],
-            negative_prompt="",
-            num_inference_steps=20,  # Faster generation for fallback
-            guidance_scale=7.0
-        )
-        
-        # Add task to queue and get task ID
-        task_id = await task_queue.add_task(design_request)
-        logger.info(f"Created fallback task: {task_id}")
-        
-        # Wait for the result (with shorter timeout)
-        result = await task_queue.wait_for_result(task_id, timeout=30)  # Shorter timeout for fallback
-        
-        if result and result.get("image_data"):
-            return JSONResponse({
-                "result": {
-                    "image_data": result["image_data"],
-                    "task_id": task_id
-                }
-            })
-        else:
-            raise HTTPException(status_code=500, detail="Fallback generation failed or timed out")
-            
-    except Exception as e:
-        logger.error(f"Error in fallback generation: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return await ImageService.generate_image_fallback(request, task_queue)
 
 @app.post("/design")
 async def create_design(request: DesignRequest):

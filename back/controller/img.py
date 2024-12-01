@@ -142,3 +142,33 @@ class ImgProcessing :
         except Exception as e:
             self.logger.error(f"Error generating design: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
+    
+    async def generate_image_fallback(self, request, task_queue) -> bytes:
+        try:
+            design_request = DesignRequest(
+                prompt=request["prompt"],
+                negative_prompt="",
+                num_inference_steps=20,  # Faster generation for fallback
+                guidance_scale=7.0
+            )
+            
+            # Add task to queue and get task ID
+            task_id = await task_queue.add_task(design_request)
+            self.logger.info(f"Created fallback task: {task_id}")
+            
+            # Wait for the result (with shorter timeout)
+            result = await task_queue.wait_for_result(task_id, timeout=30)  # Shorter timeout for fallback
+            
+            if result and result.get("image_data"):
+                return JSONResponse({
+                    "result": {
+                        "image_data": result["image_data"],
+                        "task_id": task_id
+                    }
+                })
+            else:
+                raise HTTPException(status_code=500, detail="Fallback generation failed or timed out")
+                
+        except Exception as e:
+            self.logger.error(f"Error in fallback generation: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))

@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
@@ -7,15 +8,13 @@ from const import *
 
 
 class BasicInfoController:
-    def __init__(self, logger, connected_workers, task_queue):
+    def __init__(self, logger):
         self.logger = logger
-        self.connected_workers = connected_workers
-        self.task_queue = task_queue
         pass
 
     # now create a function
 
-    async def health_check_controller(self):
+    async def health_check_controller(self, task_queue, connected_workers):
         """Health check endpoint"""
         response_data = {
             "status": "healthy",
@@ -23,12 +22,12 @@ class BasicInfoController:
             "version": "1.0.0",
             "components": {
                 "workers": {
-                    "status": "healthy" if self.connected_workers else "degraded",
-                    "count": len(self.connected_workers)
+                    "status": "healthy" if connected_workers else "degraded",
+                    "count": len(connected_workers)
                 },
                 "queue": {
                     "status": "healthy",
-                    "size": self.task_queue.size()
+                    "size": task_queue.size()
                 },
                 "storage": {
                     "status": "healthy"
@@ -71,19 +70,19 @@ class BasicInfoController:
                 }
             )
 
-    async def service_status_controller(self):
+    async def service_status_controller(self, task_queue, connected_workers):
         """Get detailed service status"""
         try:
             return {
                 "status": "online",
                 "workers": {
-                    "connected": len(self.connected_workers),
-                    "ids": list(self.connected_workers.keys())
+                    "connected": len(connected_workers),
+                    "ids": list(connected_workers.keys())
                 },
                 "queue": {
-                    "size": self.task_queue.size(),
-                    "pending": self.task_queue.pending_count(),
-                    "processing": self.task_queue.processing_count()
+                    "size": task_queue.size(),
+                    "pending": task_queue.pending_count(),
+                    "processing": task_queue.processing_count()
                 },
                 "storage": {
                     "outputs_dir": str(OUTPUTS_DIR),
@@ -93,4 +92,19 @@ class BasicInfoController:
             }
         except Exception as e:
             self.logger.error(f"Error getting service status: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+        
+    async def status(self, task_queue, task_id) -> dict:
+        try:
+            status = await task_queue.get_task_status(task_id)
+            if not status:
+                self.logger.error(f"Task not found: {task_id}")
+                raise HTTPException(status_code=404, detail="Task not found")
+            
+            self.logger.info(f"Task status: {json.dumps(status)}")
+            return JSONResponse(status)
+        except HTTPException:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error getting status: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
