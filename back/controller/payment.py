@@ -25,27 +25,17 @@ class PaymentService:
                     'quantity': 1,
                 }],
                 mode="payment",
-                success_url= "{BASE_URL}/api/payment/success?session_id={CHECKOUT_SESSION_ID}",
-                cancel_url= "{BASE_URL}/api/payment/cancel?session_id={CHECKOUT_SESSION_ID}",
+                success_url=f'{BASE_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}',
+                cancel_url=f'{BASE_URL}/payment/cancel?session_id={{CHECKOUT_SESSION_ID}}',
             )
             return session  # Return session object for further use
         except stripe.error.StripeError as e:
             print(f"Error occurred: {e}")
             return None
 
-    async def payment_success(self, session_id):
+    async def payment_status(self, session_id):
         try:
             session = stripe.checkout.Session.retrieve(session_id)
-            self.logger.info(session)
-            return session
-        except stripe.error.StripeError as e:
-            print(f"Error occurred: {e}")
-            return None
-
-    async def payment_cancel(self, session_id):
-        try:
-            session = stripe.checkout.Session.retrieve(session_id)
-            self.logger.info(session)
             return session
         except stripe.error.StripeError as e:
             print(f"Error occurred: {e}")

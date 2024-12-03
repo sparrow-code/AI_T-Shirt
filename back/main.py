@@ -157,13 +157,15 @@ async def save_to_history(request: dict = Body(...)):
     return await ImageService.save_design_history(request)
 
 @app.get("/payment/create")
-async def create_payment(data: PaymentRequest):
-    session = PaymentService.create_pay_session(1499, "usd", "Test Payment")
+async def create_payment():
+    session = PaymentService.create_pay_session(10, "usd", "Test Payment")
     return {"checkout_url": session.url}
 
 # Success/Cancel Endpoint
 @app.get("/payment/{check}")
-async def payment_status(check: str):
+async def payment_status(check: str, session_id: str):
+    session = await PaymentService.payment_status(session_id)
+    logger.info( f"Payment status: {session.status}" )
     if check == "success":
         return {"message": "Payment successful! Thank you for your purchase."}
     elif check == "cancel":
