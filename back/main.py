@@ -27,6 +27,7 @@ from function.common import serialize_datetime
 # Services Are Imported Here
 from controller.info import BasicInfoController
 from controller.img import ImgProcessing
+from controller.payment import PaymentService
 
 load_dotenv()
 current_dir = Path(__file__).parent
@@ -70,6 +71,7 @@ connected_workers: Dict[str, WebSocket] = {}
 task_queue = TaskQueue(logger)
 BasicInfoService = BasicInfoController(logger)
 ImageService = ImgProcessing(logger)
+PaymentService = PaymentService(logger)
 
 
 
@@ -153,6 +155,21 @@ async def get_design_history():
 async def save_to_history(request: dict = Body(...)):
     """Save a design to history"""
     return await ImageService.save_design_history(request)
+
+@app.get("/payment/create")
+async def create_payment(data: PaymentRequest):
+    session = PaymentService.create_pay_session(1499, "usd", "Test Payment")
+    return {"checkout_url": session.url}
+
+# Success/Cancel Endpoint
+@app.get("/payment/{check}")
+async def payment_status(check: str):
+    if check == "success":
+        return {"message": "Payment successful! Thank you for your purchase."}
+    elif check == "cancel":
+        return {"message": "Payment canceled. Please try again."}
+    else:
+        raise HTTPException(status_code=404, detail="Invalid payment status")
 
 @app.websocket("/ws")
 async def websocket_worker(websocket: WebSocket):
