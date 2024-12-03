@@ -158,20 +158,20 @@ async def save_to_history(request: dict = Body(...)):
 
 @app.get("/payment/create")
 async def create_payment():
-    session = PaymentService.create_pay_session(10, "usd", "Test Payment")
+    session = await PaymentService.create_pay_session(10, "usd", "Test Payment")
     return {"checkout_url": session.url}
 
 # Success/Cancel Endpoint
 @app.get("/payment/{check}")
 async def payment_status(check: str, session_id: str):
     session = await PaymentService.payment_status(session_id)
-    logger.info( f"Payment status: {session.status}" )
-    if check == "success":
+    if session == "complete":
         return {"message": "Payment successful! Thank you for your purchase."}
-    elif check == "cancel":
+    elif session == "cancel":
         return {"message": "Payment canceled. Please try again."}
     else:
         raise HTTPException(status_code=404, detail="Invalid payment status")
+
 
 @app.websocket("/ws")
 async def websocket_worker(websocket: WebSocket):
