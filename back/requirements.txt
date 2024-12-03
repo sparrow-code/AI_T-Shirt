@@ -32,6 +32,12 @@ flatbuffers>=24.3.25
 numba>=0.58.1
 llvmlite>=0.42.0
 
+# DB 
+pymongo>=4.10.1
+
+# Payment
+stripe>=11.3.0
+
 # Additional dependencies
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
