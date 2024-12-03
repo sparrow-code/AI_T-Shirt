@@ -1,12 +1,12 @@
 from const import BASE_URL, STRIPE_API, STRIPE_SECRET
-from stripe import StripeClient
+from stripe
 
 
 class PaymentService:
     stripe.api_key = STRIPE_SECRET
 
     def __init__(self, logger):
-        self.stripe_client = StripeClient(api_key=STRIPE_API)
+        # self.stripe_client = StripeClient(api_key=STRIPE_API)
         self.logger = logger
         pass
 
