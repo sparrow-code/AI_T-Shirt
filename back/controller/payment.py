@@ -1,5 +1,5 @@
 from const import BASE_URL, STRIPE_API, STRIPE_SECRET
-from stripe
+import stripe
 
 
 class PaymentService:
