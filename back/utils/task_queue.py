@@ -129,7 +129,7 @@ class TaskQueue:
                 task.status = TaskStatus.COMPLETED
                 task.completed_at = datetime.utcnow()
                 task.result = {
-                    "image_url": f"/images/{filename}",
+                    "image_url": f"/output/{filename}",
                     "image_data": f"data:image/png;base64,{base64_data}",
                     "source": "api"
                 }

@@ -257,7 +257,7 @@ if __name__ == "__main__":
         
     if stage == "DEV":
         from pyngrok import ngrok
-        public_url = ngrok.connect(port, "http", subdomain="poodle-feasible-sadly.ngrok-free.app")
+        public_url = ngrok.connect(port, "http", "poodle-feasible-sadly.ngrok-free.app")
         logger.info(f"FastAPI is accessible at: {public_url}")
     
     logger.info(f"Server initialization complete. Starting server on {host}:{port}")
