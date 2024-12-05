@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from config import settings
+from const import MONGO_DB
 
-client = MongoClient(settings.MONGO_URI)
-db = client[settings.DATABASE_NAME]
+client = MongoClient(MONGO_DB)
+db = client["AI_T_Shirt"]

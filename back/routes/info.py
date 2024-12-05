@@ -5,11 +5,6 @@ from utils.task_queue import task_queue, connected_workers
 router = APIRouter(prefix="", tags=["Info"])
 BasicInfoService = None
 
-@router.get("/")
-async def root():
-    """Root endpoint that redirects to /health"""
-    return {"redirect": "/health"}
-
 @router.get("/health")
 async def health_check():
     return await BasicInfoService.health_check(task_queue, connected_workers)
