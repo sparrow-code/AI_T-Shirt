@@ -24,6 +24,9 @@ from models.design import DesignRequest
 from utils.task_queue import TaskQueue
 from function.common import serialize_datetime
 
+# Import Routes
+from routes import auth
+
 # Services Are Imported Here
 from controller.info import BasicInfoController
 from controller.img import ImgProcessing
@@ -74,7 +77,10 @@ ImageService = ImgProcessing(logger)
 PaymentService = PaymentService(logger)
 
 
+# ? Now Init Routes
+app.include_router(auth.router)
 
+# ? Info Routes
 @app.get("/")
 async def root():
     """Root endpoint that redirects to /health"""
@@ -131,6 +137,8 @@ async def adjust_transparency(request: dict = Body(...)):
     """Make image transparent based on transparency value"""
     return await ImageService.adjust_transparency(request)
 
+
+# ? Design Router
 @app.post("/generate")
 async def generate_design(request: dict = Body(...)):
    """Primary endpoint for design generation"""
@@ -155,6 +163,9 @@ async def get_design_history():
 async def save_to_history(request: dict = Body(...)):
     """Save a design to history"""
     return await ImageService.save_design_history(request)
+
+# ? Payment Router
+# app.include_router(payment.router)
 
 @app.get("/payment/create")
 async def create_payment():

@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_URL=os.getenv("BASE_URL")
+SECRET=os.getenv("SECRET")
+MONGO_DB=os.getenv("MONGO_DB")
 
 STRIPE_API=os.getenv("STRIPE_API")
 STRIPE_SECRET=os.getenv("STRIPE_SECRET")
