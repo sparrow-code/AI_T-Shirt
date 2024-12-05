@@ -25,7 +25,7 @@ from utils.task_queue import TaskQueue
 from function.common import serialize_datetime
 
 # Import Routes
-from routes import auth
+from routes import auth, info
 
 # Services Are Imported Here
 from controller.info import BasicInfoController
@@ -73,18 +73,17 @@ connected_workers: Dict[str, WebSocket] = {}
 # init class service
 task_queue = TaskQueue(logger)
 BasicInfoService = BasicInfoController(logger)
+info.BasicInfoService = BasicInfoService
 ImageService = ImgProcessing(logger)
 PaymentService = PaymentService(logger)
 
 
 # ? Now Init Routes
-app.include_router(auth.router)
-
-# ? Info Routes
+app.include_router(info.router, prefix="/info" )
 @app.get("/")
 async def root():
     """Root endpoint that redirects to /health"""
-    return RedirectResponse(url="/health")
+    return RedirectResponse(url="/info/health")
 
 @app.get("/health")
 async def health_check() : 
@@ -166,7 +165,6 @@ async def save_to_history(request: dict = Body(...)):
 
 # ? Payment Router
 # app.include_router(payment.router)
-
 @app.get("/payment/create")
 async def create_payment():
     session = await PaymentService.create_pay_session(10, "usd", "Test Payment")
