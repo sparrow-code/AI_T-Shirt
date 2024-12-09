@@ -1,10 +1,13 @@
 # Class Which Contain All Image Related Functions
 
 # ? Library To Work With Files
-from datetime import datetime
 import io
 import json
 import uuid
+from datetime import datetime
+from utils.setup import logger
+
+from routes.info import task_queue
 
 # ? Library To Work With Image
 from const import OUTPUTS_DIR
@@ -21,8 +24,7 @@ from fastapi.responses import JSONResponse
 
 class ImgProcessing :
 
-    def __init__(self, logger) -> None:
-        self.logger = logger
+    def __init__(self) -> None:
         pass
 
     async def remove_bg(self, request) -> bytes:
@@ -44,7 +46,7 @@ class ImgProcessing :
                 "image": f"data:image/png;base64,{base64.b64encode(img_byte_arr).decode('utf-8')}"
             })
         except Exception as e:
-            self.logger.error(f"Error in background removal: {str(e)}")
+            logger.error(f"Error in background removal: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
     async def color_transparency(self, file, color: str, tolerance: float) -> bytes:
@@ -76,7 +78,7 @@ class ImgProcessing :
             
             return Response(content=buffer.tobytes(), media_type="image/png")
         except Exception as e:
-            self.logger.error(f"Error in color transparency: {str(e)}")
+            logger.error(f"Error in color transparency: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
         
     async def adjust_transparency(self, request) -> bytes:
@@ -110,10 +112,11 @@ class ImgProcessing :
                 "image": f"data:image/png;base64,{img_base64}"
             })
         except Exception as e:
-            self.logger.error(f"Error adjusting transparency: {str(e)}")
+            logger.error(f"Error adjusting transparency: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
     
-    async def generate_image(self, request, task_queue) -> bytes:
+    # ! Required Task Que
+    async def generate_image(self, request) -> bytes:
         try:
             design_request = DesignRequest(
                 prompt=request["prompt"],
@@ -125,7 +128,7 @@ class ImgProcessing :
             
             # Add task to queue and get task ID
             task_id = await task_queue.add_task(design_request)
-            self.logger.info(f"Created new task: {task_id}")
+            logger.info(f"Created new task: {task_id}")
             
             # Wait for the result (with timeout)
             result = await task_queue.wait_for_result(task_id, timeout=120)  # Increased timeout to 120 seconds
@@ -144,10 +147,11 @@ class ImgProcessing :
                 )
                     
         except Exception as e:
-            self.logger.error(f"Error generating design: {str(e)}")
+            logger.error(f"Error generating design: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
     
-    async def generate_image_fallback(self, request, task_queue) -> bytes:
+    # ! Require Tast Que
+    async def generate_image_fallback(self, request) -> bytes:
         try:
             design_request = DesignRequest(
                 prompt=request["prompt"],
@@ -158,7 +162,7 @@ class ImgProcessing :
             
             # Add task to queue and get task ID
             task_id = await task_queue.add_task(design_request)
-            self.logger.info(f"Created fallback task: {task_id}")
+            logger.info(f"Created fallback task: {task_id}")
             
             # Wait for the result (with shorter timeout)
             result = await task_queue.wait_for_result(task_id, timeout=30)  # Shorter timeout for fallback
@@ -174,7 +178,7 @@ class ImgProcessing :
                 raise HTTPException(status_code=500, detail="Fallback generation failed or timed out")
                 
         except Exception as e:
-            self.logger.error(f"Error in fallback generation: {str(e)}")
+            logger.error(f"Error in fallback generation: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
     
     async def save_design(self, design_data, design_history) -> bytes:
@@ -190,7 +194,7 @@ class ImgProcessing :
                 import base64
                 base64.b64decode(image_data)
             except Exception as e:
-                self.logger.error(f"Invalid image data: {str(e)}")
+                logger.error(f"Invalid image data: {str(e)}")
                 raise HTTPException(status_code=400, detail="Invalid image data")
 
             # Add timestamp and metadata
@@ -211,14 +215,15 @@ class ImgProcessing :
         except HTTPException:
             raise
         except Exception as e:
-            self.logger.error(f"Error saving design: {str(e)}")
+            logger.error(f"Error saving design: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
     
-    async def create_design(self, request,task_queue) -> bytes:
+    # ! Required Task Que
+    async def create_design(self, request) -> bytes:
         try:
             # Add task to queue and get task ID
             task_id = await task_queue.add_task(request)
-            self.logger.info(f"Created new task: {task_id}")
+            logger.info(f"Created new task: {task_id}")
             
             return JSONResponse({
                 "task_id": task_id,
@@ -226,7 +231,7 @@ class ImgProcessing :
             })
             
         except Exception as e:
-            self.logger.error(f"Error creating design: {str(e)}")
+            logger.error(f"Error creating design: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
         
     async def save_design_history(self, request) -> bytes:
@@ -260,7 +265,7 @@ class ImgProcessing :
             return JSONResponse({"status": "success", "id": new_item["id"]})
             
         except Exception as e:
-            self.logger.error(f"Error saving to history: {str(e)}")
+            logger.error(f"Error saving to history: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
     
     async def get_design_history(self) -> bytes:
@@ -275,9 +280,9 @@ class ImgProcessing :
                     # Return the last 10 designs, most recent first
                     return JSONResponse(history[-10:])
             except json.JSONDecodeError:
-                self.logger.error("Error decoding history file")
+                logger.error("Error decoding history file")
                 return JSONResponse([])
                 
         except Exception as e:
-            self.logger.error(f"Error fetching design history: {str(e)}")
+            logger.error(f"Error fetching design history: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))

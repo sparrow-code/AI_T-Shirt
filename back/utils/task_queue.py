@@ -10,13 +10,15 @@ from const import *
 from models.task import Task, TaskStatus
 from models.design import DesignRequest
 import json
-from function.common import serialize_datetime
+from utils.common import serialize_datetime
 from PIL import Image
 import io
 import time
 
+from utils.setup import setup_logging
+
 class TaskQueue:
-    def __init__(self, logger):
+    def __init__(self):
         self.tasks = {}  # type: Dict[str, Task]
         self.pending_tasks = []  # type: List[Task]
         self.processing_tasks = {}  # type: Dict[str, Task]
@@ -31,7 +33,7 @@ class TaskQueue:
         self.outputs_dir = OUTPUTS_DIR
         self.outputs_dir.mkdir(exist_ok=True)
         
-        self.logger = logger
+        self.logger = setup_logging()
 
 
         

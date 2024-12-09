@@ -4,11 +4,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ! Below Are Constants
+
+# Server
+HOST=os.getenv("HOST")
+PORT=int(os.getenv("PORT"))
+STAGE=os.getenv("STAGE")
 BASE_URL=os.getenv("BASE_URL")
-SECRET=os.getenv("SECRET")
+SECRET_KEY=os.getenv("SECRET_KEY")
+
+# Database
 MONGO_DB=os.getenv("MONGO_DB")
 
-SECRET_KEY="I_Love_Mine_Secret"
 ALGORITHM="HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 

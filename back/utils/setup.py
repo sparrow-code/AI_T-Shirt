@@ -1,3 +1,4 @@
+import logging
 from const import *
 
 def setup_directories():
@@ -5,9 +6,8 @@ def setup_directories():
     OUTPUTS_DIR.mkdir(exist_ok=True, parents=True)
     LOG_DIR.mkdir(exist_ok=True)
 
-def setup_logging(logging):
+def setup_logging():
     """Configure logging"""
-    
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -17,3 +17,6 @@ def setup_logging(logging):
         ]
     )
     return logging.getLogger(__name__)
+
+
+logger = setup_logging()

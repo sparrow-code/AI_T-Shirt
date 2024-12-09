@@ -2,7 +2,7 @@ import httpx
 import asyncio
 import logging
 from fastapi.testclient import TestClient
-from main import app
+from main_hold import app
 
 logging.basicConfig(
     level=logging.INFO,

@@ -1,7 +1,7 @@
 # Main server requirements
 fastapi>=0.109.2
 uvicorn>=0.27.1
-python-dotenv>=1.0.1
+python-dotenv>=1.0.1 # Init Env
 requests>=2.31.0
 Pillow>=10.2.0
 rembg>=2.0.59
@@ -33,11 +33,8 @@ flatbuffers>=24.3.25
 numba>=0.58.1
 llvmlite>=0.42.0
 
-# DB 
-pymongo>=4.10.1
-
-# Payment
-stripe>=11.3.0
+pymongo>=4.10.1 # DB
+stripe>=11.3.0 # Payment
 
 # Additional dependencies
 python-jose[cryptography]>=3.3.0

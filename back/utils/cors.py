@@ -1,4 +1,5 @@
 from fastapi.staticfiles import StaticFiles
+
 class CORSStaticFiles(StaticFiles):
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":

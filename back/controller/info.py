@@ -5,11 +5,11 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 
 from const import *
+from utils.setup import logger
 
 
 class BasicInfoController:
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
         pass
 
     # now create a function
@@ -42,7 +42,7 @@ class BasicInfoController:
                 test_file.write_text("test")
                 test_file.unlink()
             except Exception as e:
-                self.logger.error(f"Outputs directory not writable: {str(e)}")
+                logger.error(f"Outputs directory not writable: {str(e)}")
                 response_data["status"] = "degraded"
                 response_data["components"]["storage"] = {
                     "status": "unhealthy",
@@ -60,7 +60,7 @@ class BasicInfoController:
                 content=response_data
             )
         except Exception as e:
-            self.logger.error(f"Health check failed: {str(e)}")
+            logger.error(f"Health check failed: {str(e)}")
             return JSONResponse(
                 status_code=500,  # Only return 500 for unexpected errors
                 content={
@@ -91,20 +91,20 @@ class BasicInfoController:
                 "timestamp": datetime.utcnow().isoformat()
             }
         except Exception as e:
-            self.logger.error(f"Error getting service status: {str(e)}")
+            logger.error(f"Error getting service status: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
         
-    async def status(self, task_queue, task_id) -> dict:
+    async def get_task_status_controller(self, task_queue, task_id) -> dict:
         try:
             status = await task_queue.get_task_status(task_id)
             if not status:
-                self.logger.error(f"Task not found: {task_id}")
+                logger.error(f"Task not found: {task_id}")
                 raise HTTPException(status_code=404, detail="Task not found")
             
-            self.logger.info(f"Task status: {json.dumps(status)}")
+            logger.info(f"Task status: {json.dumps(status)}")
             return JSONResponse(status)
         except HTTPException:
             raise
         except Exception as e:
-            self.logger.error(f"Error getting status: {str(e)}")
+            logger.error(f"Error getting status: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
