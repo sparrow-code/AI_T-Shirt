@@ -251,7 +251,7 @@ class ImgProcessing :
             # Create new history item
             new_item = {
                 "id": str(uuid.uuid4()),
-                "image_data": request["image_data"],
+                "image_data": request["image_url"],
                 "prompt": request.get("prompt", ""),
                 "created_at": datetime.utcnow().isoformat(),
                 "transform": request.get("transform", None)
