@@ -1,5 +1,6 @@
 import logging
 from const import *
+import os
 
 def setup_directories():
     """Setup required directories"""
@@ -18,6 +19,9 @@ def setup_directories():
 
 def setup_logging():
     """Configure logging"""
+    # Ensure log directory exists before creating log file
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -27,6 +31,5 @@ def setup_logging():
         ]
     )
     return logging.getLogger(__name__)
-
 
 logger = setup_logging()

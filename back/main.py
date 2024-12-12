@@ -1,14 +1,13 @@
 from const import *
+from utils.setup import setup_directories, logger
 
 # Create an Fast API App
 from routes import auth, info, design, user
-from utils.setup import setup_directories, logger
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
 app = FastAPI()
-setup_directories()
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -17,6 +16,8 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json"
 )
+
+setup_directories()
 
 @app.get("/")
 async def root():
