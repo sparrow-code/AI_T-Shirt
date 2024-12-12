@@ -1,7 +1,7 @@
 from const import *
 
 # Create an Fast API App
-from routes import auth, info, design
+from routes import auth, info, design, user
 from utils.setup import setup_directories, logger
 
 from fastapi import FastAPI
@@ -22,9 +22,10 @@ app = FastAPI(
 async def root():
     return RedirectResponse(url="/api/info/health")
 
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(info.router, prefix="/api/info", tags=["info"])
-app.include_router(design.router, prefix="/api/design", tags=["design"])
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
+app.include_router(info.router, prefix="/api/info", tags=["Info"])
+app.include_router(design.router, prefix="/api/design", tags=["Design"])
+app.include_router(user.router, prefix="/api/user", tags=["User"])
 
 
 

@@ -3,7 +3,7 @@ from fastapi import APIRouter, WebSocket
 from controller.info import BasicInfoController
 from utils.task_queue import TaskQueue
 
-router = APIRouter(prefix="", tags=["Info"])
+router = APIRouter()
 BasicInfoService = None
 
 design_history: list = []

@@ -25,7 +25,7 @@ async def generate(request: dict = Body(...)):
 
 @router.post("/remove-background")
 async def remove_background(request: dict = Body(...)):
-    return await ImageSevice.remove_background(request)
+    return await ImageSevice.remove_bg(request)
 
 @router.post("/color-transparency")
 async def color_transparency(

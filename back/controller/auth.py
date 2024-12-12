@@ -13,6 +13,7 @@ def register_user(user):
         "hashed_password": hashed_password,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
+        "credits" : 0,
         "is_active": True,
     }
     db.users.insert_one(user_data)

@@ -2,6 +2,7 @@
 
 # ? Library To Work With Files
 import io
+import os
 import json
 import uuid
 from datetime import datetime
@@ -29,25 +30,32 @@ class ImgProcessing :
 
     async def remove_bg(self, request) -> bytes:
         try:
+            # Extract image URL and validate
+            image_url = request.get("image_url")
+            if not image_url:
+                raise HTTPException(status_code=400, detail="image_url is required")
 
-            # Decode base64 image
-            image_data = base64.b64decode(request["image"])
-            input_image = Image.open(io.BytesIO(image_data))
-            
-            # Remove background
+            # Remove leading slashes, create image path and check existence
+            image_path = os.path.join(image_url.strip("/"))
+            if not os.path.exists(image_path):
+                raise HTTPException(status_code=404, detail="Image not found")
+
+            # Open image and process
+            input_image = Image.open(image_path)
             output_image = remove(input_image)
-            
-            # Convert back to base64
-            img_byte_arr = io.BytesIO()
-            output_image.save(img_byte_arr, format='PNG')
-            img_byte_arr = img_byte_arr.getvalue()
-            
-            return JSONResponse({
-                "image": f"data:image/png;base64,{base64.b64encode(img_byte_arr).decode('utf-8')}"
-            })
+
+            # Generate output file path
+            output_image_path = os.path.splitext(image_path)[0] + "_bg_remove.png"
+
+            # Save processed image
+            output_image.save(output_image_path, format='PNG')
+
+            # Return the relative path in shortened form
+            return JSONResponse({"bg_remove_url": f"/{output_image_path.lstrip('./')}"})
+
         except Exception as e:
-            logger.error(f"Error in background removal: {str(e)}")
-            raise HTTPException(status_code=500, detail=str(e))
+            logger.error(f"Error in background removal: {e}")
+            raise HTTPException(status_code=500, detail="Background removal failed.")
 
     async def color_transparency(self, file, color: str, tolerance: float) -> bytes:
         try:        
