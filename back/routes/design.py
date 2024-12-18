@@ -1,30 +1,32 @@
 from fastapi import APIRouter, Body, UploadFile, File, Form
 from controller.img import ImgProcessing
+from schemas.design import BGRemoveRequest, ImageGenerateRequest
 
 router = APIRouter()
 
 ImageSevice = ImgProcessing()
 design_history: list = []
 
-@router.get("/history")
+@router.get("/history", summary="Get History", description="Get Top 5 AI Image History")
 async def get_history():
     return await ImageSevice.get_design_history()
 
-@router.post("/save")
+@router.post("/save", summary="Need To Code", description="Save A Design To History")
 async def save_design(design_data: dict):
     """Save a design to history."""
     return await ImageSevice.save_design(design_data, design_history)
 
-@router.post("/save/history")
+@router.post("/save/history", summary="Save to History", description="Save A Design To History")
 async def save_design(request: dict = Body(...)):
     return await ImageSevice.save_design_history(request)
 
-@router.post("/generate")
-async def generate(request: dict = Body(...)):
-    return await ImageSevice.generate_image(request)
+@router.post("/generate", summary="Generate AI Image", description="It will Only Generate Image using AI")
+async def generate(request: ImageGenerateRequest):
+    request_data = request.dict() 
+    return await ImageSevice.generate_image(request_data)
 
 @router.post("/remove-background")
-async def remove_background(request: dict = Body(...)):
+async def remove_background(request: BGRemoveRequest):
     return await ImageSevice.remove_bg(request)
 
 @router.post("/color-transparency")

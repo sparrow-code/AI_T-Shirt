@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from utils.db import db
 from utils.auth import *
 from datetime import datetime, timedelta
+from bson import ObjectId
 
 def register_user(user):
     if db.users.find_one({"email": user.email}):
@@ -33,14 +34,21 @@ def login_user(user, response):
 
     return {"access_token": access_token, "token_type": "bearer"}
 
-def get_user_details(token):
+def get_user_details(token, id=False):
     user_data = verify_token(token)
     if not user_data:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = db.users.find_one({"email": user_data["sub"]}, {"_id": 0, "hashed_password": 0})
+    projection = {"hashed_password": 0}
+    if not id:
+        projection["_id"] = 0 
+
+    user = db.users.find_one({"email": user_data["sub"]}, projection)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    if "_id" in user:
+        user["_id"] = str(user["_id"])
 
     return user
 

@@ -7,12 +7,12 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @router.get("/credits")
-async def orders():
+async def credits():
     """
     
     """
     return
 
 @router.get("/design")
-async def orders():
+async def design():
     return

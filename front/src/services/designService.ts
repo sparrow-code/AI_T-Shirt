@@ -59,11 +59,11 @@ export class DesignService {
         priority: 1
       });
 
-      if (!response?.result?.image_data) {
+      if (!response?.result?.image_url) {
         throw new Error('No image data received from the server');
       }
 
-      return response.result.image_data;
+      return response.result.image_url;
     } catch (error) {
       console.error('Error generating design:', error);
       if (error instanceof Error) {

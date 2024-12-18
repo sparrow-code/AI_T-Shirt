@@ -18,6 +18,7 @@ build/
 !worker/.env
 
 outputs/
+virtEnv/
 
 # Model directories and files
 model_cache/

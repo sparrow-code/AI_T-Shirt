@@ -1,8 +1,9 @@
+from fastapi.staticfiles import StaticFiles
 from const import *
 from utils.setup import setup_directories, logger
 
 # Create an Fast API App
-from routes import auth, info, design, user
+from routes import auth, info, design, user, order, product
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
@@ -19,13 +20,17 @@ app = FastAPI(
 
 setup_directories()
 
+app.mount("/images", StaticFiles(directory=OUTPUTS_DIR), name="images")
+
 @app.get("/")
 async def root():
     return RedirectResponse(url="/api/info/health")
 
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
-app.include_router(info.router, prefix="/api/info", tags=["Info"])
 app.include_router(design.router, prefix="/api/design", tags=["Design"])
+app.include_router(info.router, prefix="/api/info", tags=["Info"])
+app.include_router(order.router, prefix="/api/order", tags=["Order"])
+app.include_router(product.router, prefix="/api/product", tags=["Product"])
 app.include_router(user.router, prefix="/api/user", tags=["User"])
 
 

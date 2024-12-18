@@ -189,6 +189,7 @@ class ImgProcessing :
             logger.error(f"Error in fallback generation: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
     
+    # ! Dead
     async def save_design(self, design_data, design_history) -> bytes:
         try:
             if "image_data" not in design_data:
