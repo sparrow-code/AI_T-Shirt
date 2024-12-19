@@ -6,7 +6,15 @@ from utils.setup import setup_directories, logger
 from routes import auth, info, design, user, order, product, analytics
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://aitshirts.in",
+    "http://localhost:8000",
+    "http://localhost:3000",
+]
 
 app = FastAPI()
 
@@ -47,9 +55,22 @@ if __name__ == "__main__":
         
     if STAGE == "DEV":
         from pyngrok import ngrok
-        public_url = ngrok.connect(PORT, "http", "poodle-feasible-sadly.ngrok-free.app")
-        logger.info(f"FastAPI is accessible at: {public_url}")
-    
+        
+        # Configure ngrok with your auth token (required for custom domains)
+        ngrok.set_auth_token("YOUR_NGROK_AUTH_TOKEN")  # Make sure to add your token
+        
+        # Connect with your custom domain
+        try:
+            # Use your static domain
+            tunnel = ngrok.connect(
+                addr=PORT,
+                proto="http",
+                hostname="poodle-feasible-sadly.ngrok-free.app"  # Your static domain
+            )
+            logger.info(f"FastAPI is accessible at: {tunnel.public_url}")
+        except Exception as e:
+            logger.error(f"Failed to establish ngrok tunnel: {str(e)}")
+            
     logger.info(f"Server initialization complete. Starting server on {HOST}:{PORT}")
     
     uvicorn.run(
