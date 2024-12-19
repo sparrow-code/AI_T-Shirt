@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 origins = [
-    "http://localhost.tiangolo.com",
+    "https://poodle-feasible-sadly.ngrok-free.app",
     "https://aitshirts.in",
     "http://localhost:8000",
     "http://localhost:3000",
