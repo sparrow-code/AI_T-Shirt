@@ -18,6 +18,14 @@ origins = [
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Initialize FastAPI app
 app = FastAPI(
     title="AI T-Shirt Design API",
