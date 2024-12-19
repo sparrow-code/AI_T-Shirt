@@ -3,7 +3,7 @@ from const import *
 from utils.setup import setup_directories, logger
 
 # Create an Fast API App
-from routes import auth, info, design, user, order, product
+from routes import auth, info, design, user, order, product, analytics
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
@@ -26,6 +26,8 @@ app.mount("/images", StaticFiles(directory=OUTPUTS_DIR), name="images")
 async def root():
     return RedirectResponse(url="/api/info/health")
 
+
+app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(design.router, prefix="/api/design", tags=["Design"])
 app.include_router(info.router, prefix="/api/info", tags=["Info"])

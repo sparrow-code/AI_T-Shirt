@@ -12,8 +12,6 @@ from controller.product import ProductService
 from controller.auth import get_user_details
 from utils.db import db
 
-
-
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 product_service = ProductService(db)
