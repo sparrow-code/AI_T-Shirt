@@ -25,8 +25,7 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     return login_user(user, response)
 
 @router.post("/login/json", summary="Login With JSON")
-def login_json(response: Response, user: UserLogin = Depends()):
-    print("JSON Login >>", user)
+def login_json(response: Response, user: UserLogin):
     return login_user(user, response)
 
 @router.get("/me", tags=["Auth"], summary="Get current user details", description="This endpoint requires an Authorization header with a Bearer token.")

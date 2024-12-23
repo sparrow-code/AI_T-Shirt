@@ -8,6 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 
 router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 analytics_controller = AnalyticsController(db)
 
 

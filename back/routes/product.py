@@ -13,7 +13,7 @@ from controller.auth import get_user_details
 from utils.db import db
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 product_service = ProductService(db)
 
 @router.post("/", response_model=ProductInResponse)

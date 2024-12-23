@@ -14,7 +14,7 @@ from utils.db import db
 
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 order_controller = OrderController(db)
 
 @router.post(

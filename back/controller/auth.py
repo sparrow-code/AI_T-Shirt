@@ -26,8 +26,8 @@ def login_user(user, response):
     if not db_user or not verify_password(user.password, db_user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    access_token, expire_at = create_access_token(data={"sub": db_user["email"]}, expires_delta=timedelta(minutes=60))
-    response.set_cookie(key="access_token", value=access_token, httponly=True)
+    access_token, expire_at = create_access_token(data={"sub": db_user["email"]}, expires_delta=timedelta(weeks=1))
+    response.set_cookie(key="access_token", value=access_token, httponly=True, expire_at=expire_at, secure=True)
 
     # Create session in database
     create_session(user_id=str(db_user["_id"]), token=access_token, expire_at=expire_at)
