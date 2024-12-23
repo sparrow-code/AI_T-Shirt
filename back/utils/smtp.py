@@ -8,8 +8,8 @@ class SMTPController:
     def __init__(self, email_address: str, email_password: str):
         self.email_address = email_address
         self.email_password = email_password
-        self.smtp_server = 'smtp.gmail.com'
-        self.smtp_port = 465  # SSL Port
+        self.smtp_server = EMAIL_HOST
+        self.smtp_port = EMAIL_PORT  # SSL Port
         self.server = None
 
     def start_session(self):
@@ -44,4 +44,4 @@ class SMTPController:
             print("SMTP session closed.")
 
 # Create the SMTP controller instance
-smtp_utils = SMTPController(email_address='your-email@gmail.com', email_password='your-email-password')
+smtp_utils = SMTPController(email_address=EMAIL_ADDRESS, email_password=EMAIL_PASSWORD)
