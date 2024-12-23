@@ -2,7 +2,7 @@ from uuid import uuid4
 from fastapi import HTTPException
 from utils.db import db
 from utils.auth import *
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from utils.smtp import smtp_utils
 from bson import ObjectId
 from utils.setup import logger
@@ -15,6 +15,7 @@ def register_user(user):
     date = datetime.now()
     token = str(uuid4())
     user_data = {
+        "name" : user.name,
         "email": user.email,
         "hashed_password": hashed_password,
         "created_at": date,
@@ -88,8 +89,20 @@ def verify_token(token, response):
     if not updated_user:
         raise HTTPException(status_code=400, detail="User not found after update")
 
-    access_token, expire_at = create_access_token(data={"sub": updated_user["email"]}, expires_delta=timedelta(weeks=1))
-    response.set_cookie(key="access_token", value=access_token, expires=expire_at, secure=True, httponly=True)
+    access_token, expire_at = create_access_token(
+        data={"sub": updated_user["email"]}, expires_delta=timedelta(weeks=1)
+    )
+
+    if expire_at.tzinfo is None:
+        expire_at = expire_at.replace(tzinfo=timezone.utc)
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        expires=expire_at,
+        secure=True,
+        httponly=True
+    )
     create_session(user_id=str(session["user_id"]), token=access_token, expire_at=expire_at)
 
     return {"access_token": access_token, "message": "Email verified successfully", "token_type": "bearer"}
