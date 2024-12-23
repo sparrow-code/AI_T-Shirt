@@ -1,6 +1,7 @@
 from fastapi.staticfiles import StaticFiles
 from const import *
 from utils.setup import setup_directories, logger
+from utils.smtp import smtp_utils
 
 # Create an Fast API App
 from routes import auth, info, design, user, order, product, analytics
@@ -37,6 +38,15 @@ app = FastAPI(
 )
 
 setup_directories()
+
+@app.on_event("startup")
+async def startup_event():
+    smtp_utils.start_session()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    smtp_utils.close_session()
+
 
 app.mount("/images", StaticFiles(directory=OUTPUTS_DIR), name="images")
 

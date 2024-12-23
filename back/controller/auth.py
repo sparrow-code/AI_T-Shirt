@@ -1,3 +1,4 @@
+from uuid import uuid4
 from fastapi import HTTPException
 from utils.db import db
 from utils.auth import *
@@ -9,12 +10,16 @@ def register_user(user):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_password = hash_password(user.password)
+    date = datetime.utcnow()
     user_data = {
         "email": user.email,
         "hashed_password": hashed_password,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "created_at": date,
+        "updated_at": date,
         "credits" : 0,
+        "is_verify" : False,
+        "verify_token" : str(uuid4()),
+        "role": "user",
         "is_active": True,
     }
     db.users.insert_one(user_data)
@@ -27,7 +32,7 @@ def login_user(user, response):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token, expire_at = create_access_token(data={"sub": db_user["email"]}, expires_delta=timedelta(weeks=1))
-    response.set_cookie(key="access_token", value=access_token, httponly=True, expire_at=expire_at, secure=True)
+    response.set_cookie(key="access_token", value=access_token, expires=expire_at, secure=True)
 
     # Create session in database
     create_session(user_id=str(db_user["_id"]), token=access_token, expire_at=expire_at)
