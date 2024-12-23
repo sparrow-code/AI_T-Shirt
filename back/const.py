@@ -28,6 +28,8 @@ EMAIL_PORT=os.getenv("EMAIL_PORT")
 STRIPE_API=os.getenv("STRIPE_API")
 STRIPE_SECRET=os.getenv("STRIPE_SECRET")
 
+NGROK_TOKEN=os.getenv("NGROK_TOKEN")
+
 ROOT_DIR =  Path(__file__).resolve().parent
 OUTPUTS_DIR = ROOT_DIR / "output"
 LOG_DIR = ROOT_DIR / "logs"

@@ -77,7 +77,7 @@ if __name__ == "__main__":
         from pyngrok import ngrok
         
         # Configure ngrok with your auth token (required for custom domains)
-        ngrok.set_auth_token("YOUR_NGROK_AUTH_TOKEN")  # Make sure to add your token
+        ngrok.set_auth_token(NGROK_TOKEN)  # Make sure to add your token
         
         # Connect with your custom domain
         try:
