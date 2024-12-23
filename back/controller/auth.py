@@ -20,11 +20,11 @@ def register_user(user):
         "updated_at": date,
         "credits" : 0,
         "is_verify" : False,
-        "verify_token" : token,
         "role": "user",
         "is_active": True,
     }
     db.users.insert_one(user_data)
+    db.tokens.insert_one({"user_id": user_data["_id"], "token": token, "expire_at": date + timedelta(minutes=2)})
 
     verification_url = f'http://localhost:8000/verify/{token}'
     subject = "Email Verification"
@@ -70,11 +70,12 @@ def get_user_details(token, id=False):
     return user
 
 def verify_token(token, response):
-    session = db.users.find_one({"verify_token": token, "expire_at": {"$gt": datetime.utcnow()}})
+    session = db.tokens.find_one({"token": token, "expire_at": {"$gt": datetime.utcnow()}})
     if not session:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
-    db.users.update_one({"_id": session["_id"]}, {"$set": {"is_verify": True, "verify_token": None}})
+    user = db.users.update_one({"_id": session["user_id"]}, {"$set": {"is_verify": True}})
+    print(user)
 
     access_token, expire_at = create_access_token(data={"sub": session["email"]}, expires_delta=timedelta(weeks=1))
     response.set_cookie(key="access_token", value=access_token, expires=expire_at, secure=True)
