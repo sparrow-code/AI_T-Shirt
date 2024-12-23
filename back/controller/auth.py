@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from utils.db import db
 from utils.auth import *
 from datetime import datetime, timedelta
+from utils.smtp import smtp_utils
 from bson import ObjectId
 
 def register_user(user):
@@ -11,6 +12,7 @@ def register_user(user):
 
     hashed_password = hash_password(user.password)
     date = datetime.utcnow()
+    token = str(uuid4())
     user_data = {
         "email": user.email,
         "hashed_password": hashed_password,
@@ -18,13 +20,23 @@ def register_user(user):
         "updated_at": date,
         "credits" : 0,
         "is_verify" : False,
-        "verify_token" : str(uuid4()),
+        "verify_token" : token,
         "role": "user",
         "is_active": True,
     }
     db.users.insert_one(user_data)
 
-    return {"message": "User registered successfully"}
+    verification_url = f'http://localhost:8000/verify/{token}'
+    subject = "Email Verification"
+    body = f'Click the link to verify your email: {verification_url}'
+
+    try:
+        smtp_utils.send_email(subject, body, [user.email])
+    except HTTPException as e:
+        raise HTTPException(status_code=500, detail="Failed to send verification email")
+
+    return {"message": "Registration successful. Check your email for verification."}
+
 
 def login_user(user, response):
     db_user = db.users.find_one({"email": user.email})
@@ -56,6 +68,22 @@ def get_user_details(token, id=False):
         user["_id"] = str(user["_id"])
 
     return user
+
+def verify_token(token, response):
+    session = db.users.find_one({"verify_token": token, "expire_at": {"$gt": datetime.utcnow()}})
+    if not session:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    db.users.update_one({"_id": session["_id"]}, {"$set": {"is_verify": True, "verify_token": None}})
+
+    access_token, expire_at = create_access_token(data={"sub": session["email"]}, expires_delta=timedelta(weeks=1))
+    response.set_cookie(key="access_token", value=access_token, expires=expire_at, secure=True)
+
+    # Create session in database
+    create_session(user_id=str(session["_id"]), token=access_token, expire_at=expire_at)
+
+    return {"access_token": access_token, "message" : "Email verified Successfully" , "token_type": "bearer"}
+
 
 def logout_user(token, response):
     user_data = verify_token(token)
