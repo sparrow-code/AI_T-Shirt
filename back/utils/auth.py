@@ -50,9 +50,10 @@ def create_session(user_id: str, token: str, expire_at: datetime):
     session_data = {
         "user_id": user_id,
         "token": token,
-        "created_at": datetime.utcnow(),
-        "expire_at": expire_at,
+        "created_at": datetime.now(),
+        "expire_at": datetime.now() + timedelta(weeks=1),
     }
+    db[SESSION_COLLECTION].create_index([("expire_at", 1)], expireAfterSeconds=0)
     db[SESSION_COLLECTION].insert_one(session_data)
 
 def is_token_active(token: str):

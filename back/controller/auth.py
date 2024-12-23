@@ -5,13 +5,14 @@ from utils.auth import *
 from datetime import datetime, timedelta
 from utils.smtp import smtp_utils
 from bson import ObjectId
+from utils.setup import logger
 
 def register_user(user):
     if db.users.find_one({"email": user.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_password = hash_password(user.password)
-    date = datetime.utcnow()
+    date = datetime.now()
     token = str(uuid4())
     user_data = {
         "email": user.email,
@@ -24,7 +25,8 @@ def register_user(user):
         "is_active": True,
     }
     db.users.insert_one(user_data)
-    db.tokens.insert_one({"user_id": user_data["_id"], "token": token, "expire_at": date + timedelta(minutes=2)})
+    db.tokens.create_index([("expire_at", 1)], expireAfterSeconds=0)
+    db.tokens.insert_one({"user_id": user_data["_id"], "token": token, "expire_at": datetime.now() + timedelta(hours=1)})
 
     verification_url = f'http://localhost:8000/verify/{token}'
     subject = "Email Verification"
@@ -70,21 +72,27 @@ def get_user_details(token, id=False):
     return user
 
 def verify_token(token, response):
-    session = db.tokens.find_one({"token": token, "expire_at": {"$gt": datetime.utcnow()}})
+    session = db.tokens.find_one_and_delete({"token": token, "expire_at": {"$gt": datetime.utcnow()}})
     if not session:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
-    user = db.users.update_one({"_id": session["user_id"]}, {"$set": {"is_verify": True}})
-    print(user)
+    user = db.users.update_one(
+        {"_id": ObjectId(session["user_id"])},
+        {"$set": {"is_verify": True}}
+    )
 
-    access_token, expire_at = create_access_token(data={"sub": session["email"]}, expires_delta=timedelta(weeks=1))
-    response.set_cookie(key="access_token", value=access_token, expires=expire_at, secure=True)
+    if user.modified_count == 0:
+        raise HTTPException(status_code=400, detail="User not found or already verified")
 
-    # Create session in database
-    create_session(user_id=str(session["_id"]), token=access_token, expire_at=expire_at)
+    updated_user = db.users.find_one({"_id": ObjectId(session["user_id"])})
+    if not updated_user:
+        raise HTTPException(status_code=400, detail="User not found after update")
 
-    return {"access_token": access_token, "message" : "Email verified Successfully" , "token_type": "bearer"}
+    access_token, expire_at = create_access_token(data={"sub": updated_user["email"]}, expires_delta=timedelta(weeks=1))
+    response.set_cookie(key="access_token", value=access_token, expires=expire_at, secure=True, httponly=True)
+    create_session(user_id=str(session["user_id"]), token=access_token, expire_at=expire_at)
 
+    return {"access_token": access_token, "message": "Email verified successfully", "token_type": "bearer"}
 
 def logout_user(token, response):
     user_data = verify_token(token)
