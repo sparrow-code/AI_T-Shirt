@@ -66,7 +66,7 @@ def login_user(user, response):
         expires=expire_at,
         secure=True
     )
-    create_session(user_id=str(db_user["user_id"]), token=access_token, expire_at=expire_at)
+    create_session(user_id=str(db_user["_id"]), token=access_token, expire_at=expire_at)
 
     return {
         "status" : True,
