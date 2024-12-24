@@ -53,13 +53,27 @@ def login_user(user, response):
     if not db_user or not verify_password(user.password, db_user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    access_token, expire_at = create_access_token(data={"sub": db_user["email"]}, expires_delta=timedelta(weeks=1))
-    response.set_cookie(key="access_token", value=access_token, expires=expire_at, secure=True)
+    access_token, expire_at = create_access_token(
+        data={"sub": db_user["email"]}, expires_delta=timedelta(weeks=1)
+    )
 
-    # Create session in database
-    create_session(user_id=str(db_user["_id"]), token=access_token, expire_at=expire_at)
+    if expire_at.tzinfo is None:
+        expire_at = expire_at.replace(tzinfo=timezone.utc)
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        expires=expire_at,
+        secure=True
+    )
+    create_session(user_id=str(db_user["user_id"]), token=access_token, expire_at=expire_at)
+
+    return {
+        "status" : True,
+        "access_token": access_token,
+        "token_type": "bearer",
+        "message" : "User verified successfully"
+    }
 
 def get_user_details(token, id=False):
     user_data = verify_token(token)
@@ -111,8 +125,7 @@ def verify_token(token, response):
         key="access_token",
         value=access_token,
         expires=expire_at,
-        secure=True,
-        httponly=True
+        secure=True
     )
     create_session(user_id=str(session["user_id"]), token=access_token, expire_at=expire_at)
 
