@@ -28,7 +28,7 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
 def login_json(response: Response, user: UserLogin):
     return login_user(user, response)
 
-@router.get("/verfiy/{token}", tags=["Auth"], summary="Verify user")
+@router.get("/verify/{token}", tags=["Auth"], summary="Verify user")
 def verify(token: str, response: Response):
     return verify_token(token, response)
 

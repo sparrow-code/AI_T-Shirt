@@ -1,5 +1,6 @@
 from uuid import uuid4
 from fastapi import HTTPException
+from fastapi.responses import RedirectResponse
 from utils.db import db
 from utils.auth import *
 from datetime import datetime, timedelta, timezone
@@ -9,7 +10,10 @@ from utils.setup import logger
 
 def register_user(user):
     if db.users.find_one({"email": user.email}):
-        raise HTTPException(status_code=400, detail="Email already registered")
+        return {
+            "status": False,
+            "message": "Email already registered"
+        }
 
     hashed_password = hash_password(user.password)
     date = datetime.now()
@@ -29,16 +33,19 @@ def register_user(user):
     db.tokens.create_index([("expire_at", 1)], expireAfterSeconds=0)
     db.tokens.insert_one({"user_id": user_data["_id"], "token": token, "expire_at": datetime.now() + timedelta(hours=1)})
 
-    verification_url = f'http://localhost:8000/verify/{token}'
+    verification_url = f'{BASE_URL}/api/auth/verify/{token}'
     subject = "Email Verification"
     body = f'Click the link to verify your email: {verification_url}'
 
     try:
         smtp_utils.send_email(subject, body, [user.email])
     except HTTPException as e:
-        raise HTTPException(status_code=500, detail="Failed to send verification email")
+        return { 
+            "status" : False,
+            "message" :"Failed to send verification email"
+        }
 
-    return {"message": "Registration successful. Check your email for verification."}
+    return {"status": True, "message": "Registration successful. Check your email for verification."}
 
 
 def login_user(user, response):
@@ -105,7 +112,7 @@ def verify_token(token, response):
     )
     create_session(user_id=str(session["user_id"]), token=access_token, expire_at=expire_at)
 
-    return {"access_token": access_token, "message": "Email verified successfully", "token_type": "bearer"}
+    return RedirectResponse(url=FRONT_URL + "/login", status_code=302)
 
 def logout_user(token, response):
     user_data = verify_token(token)

@@ -11,6 +11,7 @@ HOST=os.getenv("HOST")
 PORT=int(os.getenv("PORT"))
 STAGE=os.getenv("STAGE")
 BASE_URL=os.getenv("BASE_URL")
+FRONT_URL=os.getenv("FRONT_URL")
 SECRET_KEY=os.getenv("SECRET_KEY")
 
 # Database
