@@ -28,14 +28,14 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
 def login_json(response: Response, user: UserLogin):
     return login_user(user, response)
 
-@router.get("/verify/{token}", tags=["Auth"], summary="Verify user")
+@router.get("/verify/{token}",  summary="Verify user")
 def verify(token: str, response: Response):
     return verify_token(token, response)
 
-@router.get("/me", tags=["Auth"], summary="Get current user details", description="This endpoint requires an Authorization header with a Bearer token.")
+@router.get("/me",  summary="Get current user details", description="This endpoint requires an Authorization header with a Bearer token.")
 def me(token: str = Depends(oauth2_scheme)):
     return get_user_details(token)
 
-@router.get("/logout", tags=["Auth"], summary="Logout user", description="This endpoint requires an Authorization header with a Bearer token.")
+@router.get("/logout",  summary="Logout user", description="This endpoint requires an Authorization header with a Bearer token.")
 def logout(response: Response, token: str = Depends(oauth2_scheme)):
     return logout_user(token, response)

@@ -33,7 +33,7 @@ def register_user(user):
     db.tokens.create_index([("expire_at", 1)], expireAfterSeconds=0)
     db.tokens.insert_one({"user_id": user_data["_id"], "token": token, "expire_at": datetime.now() + timedelta(hours=1)})
 
-    verification_url = f'{BASE_URL}/api/auth/verify/{token}'
+    verification_url = f'{FRONT_URL}/verify/{token}'
     subject = "Email Verification"
     body = f'Click the link to verify your email: {verification_url}'
 
@@ -75,9 +75,13 @@ def get_user_details(token, id=False):
         raise HTTPException(status_code=404, detail="User not found")
 
     if "_id" in user:
-        user["_id"] = str(user["_id"])
+        user["uid"] = "UID_" +  str(user.pop('_id'))
 
-    return user
+    return {
+        "status" : True,
+        "message" : "User details retrieved successfully",
+        "user" : user
+    }
 
 def verify_token(token, response):
     session = db.tokens.find_one_and_delete({"token": token, "expire_at": {"$gt": datetime.utcnow()}})
@@ -112,7 +116,12 @@ def verify_token(token, response):
     )
     create_session(user_id=str(session["user_id"]), token=access_token, expire_at=expire_at)
 
-    return RedirectResponse(url=FRONT_URL + "/login", status_code=302)
+    return {
+        "status" : True,
+        "access_token": access_token,
+        "token_type": "bearer",
+        "message" : "User verified successfully"
+    }
 
 def logout_user(token, response):
     user_data = verify_token(token)
