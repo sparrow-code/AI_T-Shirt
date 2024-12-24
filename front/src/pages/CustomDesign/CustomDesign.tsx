@@ -16,7 +16,7 @@ import { SizeSelector } from "../../components/TShirtCustomizer/SizeSelector";
 import { PromptInput } from "../../components/TShirtCustomizer/PromptInput";
 import ReactCrop, { Crop as CropType } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { DesignService } from "../../services/designService";
+import { DesignService } from "../../store/designService";
 import { DesignTransform } from "./types";
 import { DraggableDesign } from "../../components/DraggableDesign/DraggableDesign";
 import { HTML5Backend } from "react-dnd-html5-backend";

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { checkLocalServer, loadPreviousDesigns, handleGenerateDesign } from './api';
-import { DesignService } from '../../services/designService';
+import { DesignService } from '../../store/designService';
 
 // Mock DesignService
 vi.mock('../../services/designService', () => ({
@@ -21,9 +21,9 @@ describe('API Functions', () => {
       // Mock successful health check
       vi.mocked(DesignService.checkHealth).mockResolvedValueOnce(true);
       const consoleSpy = vi.spyOn(console, 'log');
-      
+
       await checkLocalServer();
-      
+
       expect(consoleSpy).toHaveBeenCalledWith('API is available');
       expect(DesignService.checkHealth).toHaveBeenCalledTimes(1);
     });
@@ -32,9 +32,9 @@ describe('API Functions', () => {
       // Mock failed health check
       vi.mocked(DesignService.checkHealth).mockResolvedValueOnce(false);
       const consoleSpy = vi.spyOn(console, 'log');
-      
+
       await checkLocalServer();
-      
+
       expect(consoleSpy).toHaveBeenCalledWith('API is not available');
       expect(DesignService.checkHealth).toHaveBeenCalledTimes(1);
     });

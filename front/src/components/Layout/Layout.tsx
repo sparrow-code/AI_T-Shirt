@@ -1,4 +1,9 @@
-import React, { FC, ReactNode } from 'react';
+import React, { FC, ReactNode, Suspense } from "react";
+import "../../index.css";
+import { Helmet } from "react-helmet";
+import Footer from "../Footer";
+import Navbar from "../Navbar";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface LayoutProps {
   children: ReactNode;
@@ -7,24 +12,20 @@ interface LayoutProps {
 
 const Layout: FC<LayoutProps> = ({ children, title }) => {
   return (
-    <div>
-      <head>
+    <>
+      <Helmet>
         <title>{title}</title>
-      </head>
-      <header>
-        <nav>
-          <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/designs">Designs</a></li>
-            <li><a href="/custom-design">Custom Design</a></li>
-          </ul>
-        </nav>
-      </header>
-      <main>{children}</main>
-      <footer>
-        <p>&copy; 2023 Auto T-Shirt Designer. All rights reserved.</p>
-      </footer>
-    </div>
+      </Helmet>
+      <div>
+        <div className="min-h-screen flex flex-col bg-gray-50">
+          <Navbar />
+          <main className="flex-grow">
+            <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
+          </main>
+          <Footer />
+        </div>
+      </div>
+    </>
   );
 };
 

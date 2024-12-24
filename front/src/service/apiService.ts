@@ -9,12 +9,13 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: "/api",
       headers: {
         'Content-Type': 'application/json',
       },
       timeout: 120000, // 120 seconds
     });
+
 
     // Add response interceptor for error handling
     this.api.interceptors.response.use(
@@ -61,7 +62,7 @@ class ApiService {
     }
 
     const status = error.response.status;
-    const message = error.response?.data?.detail || error.message;
+    const message = error.response?.data || error.message;
 
     switch (status) {
       case 400:
@@ -122,7 +123,7 @@ class ApiService {
 
   public async checkHealth(): Promise<boolean> {
     try {
-      await this.get('/health');
+      await this.get('/info/health');
       return true;
     } catch (error) {
       console.error('Health check failed:', error);

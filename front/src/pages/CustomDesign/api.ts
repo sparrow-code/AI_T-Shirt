@@ -1,7 +1,7 @@
 // This file is deprecated and will be removed in future versions.
 // Please use DesignService from '../../services/designService' directly.
 
-import { DesignService } from '../../services/designService';
+import { DesignService } from '../../store/designService';
 import { DesignTransform, DesignHistoryItem } from './types';
 
 // Proxy to DesignService for backward compatibility

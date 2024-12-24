@@ -1,4 +1,4 @@
-import { apiService } from './apiService';
+import { apiService } from '../service/apiService';
 import { DesignResponse, PromptTemplates, DesignTransform, DesignHistoryItem } from '../pages/CustomDesign/types';
 
 const PROMPT_TEMPLATES: PromptTemplates = {
@@ -22,13 +22,13 @@ export class DesignService {
 
   static async checkHealth(): Promise<boolean> {
     try {
-      await apiService.get('/health');
+      await apiService.get('/info/health');
       return true;
     } catch (error) {
       console.error('Health check failed:', error);
       // Try to connect to backup endpoint if main health check fails
       try {
-        await apiService.get('/status');
+        await apiService.get('/info/status');
         return true;
       } catch (backupError) {
         console.error('Backup health check failed:', backupError);
@@ -39,7 +39,7 @@ export class DesignService {
 
   static async loadDesignHistory(): Promise<DesignHistoryItem[]> {
     try {
-      const history = await apiService.get<DesignHistoryItem[]>('/designs/history');
+      const history = await apiService.get<DesignHistoryItem[]>('/design/history');
       return history;
     } catch (error) {
       console.error('Failed to load design history:', error);
@@ -51,7 +51,7 @@ export class DesignService {
   static async generateDesign(prompt: string): Promise<string> {
     try {
       const fullPrompt = `${PROMPT_TEMPLATES.prefix}${prompt}${PROMPT_TEMPLATES.suffix}`;
-      const response = await apiService.post<DesignResponse>('/generate', {
+      const response = await apiService.post<DesignResponse>('/design/generate', {
         prompt: fullPrompt,
         style: "realistic",
         colors: [],
@@ -152,7 +152,7 @@ export class DesignService {
       formData.append('tolerance', (1 - intensity / 100).toString()); // Convert intensity to tolerance
 
       // Call color transparency endpoint using regular post since it returns binary data
-      const response = await apiService.api.post('/color-transparency', formData, {
+      const response = await apiService.api.post('/design/color-transparency', formData, {
         responseType: 'blob',
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -180,7 +180,7 @@ export class DesignService {
 
   static async saveDesignToHistory(imageData: string): Promise<void> {
     try {
-      await apiService.post('/designs/save', { image_data: imageData });
+      await apiService.post('/api/design/save', { image_data: imageData });
     } catch (error) {
       console.error('Failed to save design to history:', error);
       throw new Error('Failed to save design');
