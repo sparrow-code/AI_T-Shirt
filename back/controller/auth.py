@@ -76,7 +76,7 @@ def login_user(user, response):
     }
 
 def get_user_details(token, id=False):
-    user_data = verify_token(token)
+    user_data = verify_jwt_token(token)
     if not user_data:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -89,7 +89,10 @@ def get_user_details(token, id=False):
         raise HTTPException(status_code=404, detail="User not found")
 
     if "_id" in user:
-        user["uid"] = "UID_" +  str(user.pop('_id'))
+        user["uid"] = "UID_" +  str(user['_id'])
+        user.pop("_id")
+        user.pop("updated_at")
+        user.pop("created_at")
 
     return {
         "status" : True,

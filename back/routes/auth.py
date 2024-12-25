@@ -29,7 +29,7 @@ def login_json(response: Response, user: UserLogin):
     return login_user(user, response)
 
 @router.get("/verify/{token}",  summary="Verify user")
-def verify(token: str, response: Response):
+def verify(response: Response, token: str):
     return verify_token(token, response)
 
 @router.get("/me",  summary="Get current user details", description="This endpoint requires an Authorization header with a Bearer token.")

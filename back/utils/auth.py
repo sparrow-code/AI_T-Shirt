@@ -31,7 +31,7 @@ def decode_access_token(token: str):
         return None
 
 
-def verify_token(token: str):
+def verify_jwt_token(token: str):
     if not is_token_active(token):  # Check if the token is active
         return None
 
