@@ -157,7 +157,7 @@ def update_profile(usrName, user_data):
     update_data = user_data.model_dump()
     update_data["updated_at"] = datetime.now()
 
-    result = db.user.find_one_and_update(
+    result = db.users.find_one_and_update(
             {"email": usrName},
             {"$set": update_data},
             return_document=True
@@ -180,8 +180,8 @@ def save_pic(
         max_file_size_mb: int = 5,
         allowed_formats: set = {'jpeg', 'png', 'gif'},
         max_dimension: int = 2000):
-            usrName = usrName.split("@")[0]
-            username = re.sub(r'[<>:"/\\|?*]', '_', usrName)
+            username = usrName.split("@")[0]
+            username = re.sub(r'[<>:"/\\|?*]', '_', username)
             # Create directory if not exists
             output_dir = OUTPUTS_DIR / username
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -243,8 +243,10 @@ def save_pic(
             image_url = f"/images/{username}/{filename}"
             db.users.find_one_and_update(
                 {"email": usrName}, 
-                {"$set": {"profile_pic": image_url}}
+                {"$set": {"profile_pic": image_url}},
+                return_document=True
             )
+            
 
             return {
                 "status": True,

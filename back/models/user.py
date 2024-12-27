@@ -3,6 +3,18 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 from bson import ObjectId
 
+class BillingAddress(BaseModel):
+    name: str
+    email: str = EmailStr
+    phone: str
+    address: str
+    city: str
+    state: str
+    zip: str
+
+    class Config:
+        arbitrary_types_allowed = True
+
 class User(BaseModel):
     name: str
     email: str = EmailStr
@@ -13,6 +25,7 @@ class User(BaseModel):
     address: Optional[str] = ""
     location: Optional[str] = ""
     phone: Optional[str] = ""
+    billing_address: Optional[BillingAddress] = None
     credits: int = 0
     is_verify: bool = False
     role: str = "user"

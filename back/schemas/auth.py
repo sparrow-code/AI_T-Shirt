@@ -1,5 +1,6 @@
+from datetime import datetime
 from bson import ObjectId
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 class UserRegister(BaseModel):
     name: str
@@ -16,7 +17,7 @@ class Token(BaseModel):
 
 
 class ProfilePicUpload(BaseModel):
-    pic_object: str  # Base64 encoded image string
+    pic_object: str
 
 class ProfilePicResponse(BaseModel):
     status: bool
@@ -31,6 +32,7 @@ class UserRequest(BaseModel):
     location: str
     phone: str
     web: str
+    updated_at: datetime = Field(default_factory=datetime.now)
 
     class Config:
         arbitrary_types_allowed = True
