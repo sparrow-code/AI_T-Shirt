@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Response, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from schemas.auth import *
-from controller.auth import get_user_details, login_user, logout_user, register_user, save_pic, verify_token
+from controller.auth import (get_user_details, login_user, logout_user, register_user, save_pic, update_profile, verify_token)
 from datetime import datetime
 
 from utils.auth import decode_access_token
@@ -53,5 +53,10 @@ async def upload_profile_pic(pic_data: ProfilePicUpload, response : Response, to
                     allowed_formats={'jpeg', 'png', 'gif'},
                     max_dimension=2000)
 
+@router.put("/profile")
+async def update_user_profile(user_data : UserRequest, token : str = Depends(oauth2_scheme)) :
+    current_user = decode_access_token(token)
+    usrName = current_user["sub"]
 
+    return update_profile(usrName, user_data)
     

@@ -12,45 +12,34 @@ from utils.smtp import smtp_utils
 from bson import ObjectId
 from utils.setup import logger
 
-async def register_user(user):
+def register_user(user):
     if db.users.find_one({"email": user.email}):
         return {
             "status": False,
             "message": "Email already registered"
         }
 
-    hashed_password = hash_password(user.password)
-    date = datetime.now()
-    token = str(uuid4())
+    # Create new user document with all defaults
     new_user = User(
-        name = user.name,
-        email = user.email,
-        hashed_password= hashed_password,
-        created_at= date,
-        updated_at= date,
+        name=user.name,
+        email=user.email,
+        hashed_password=hash_password(user.password)
     )
-    await new_user.save()
-    """     user_data = {
-        "name" : user.name,
-        "email": user.email,
-        "hashed_password": hashed_password,
-        "profile_pic" : "",
-        "profession" : "",
-        "country": "Choose Your Country",
-        "address": "",
-        "location": "",
-        "phone": "",
-        "credits" : 0,
-        "is_verify" : False,
-        "role": "user",
-        "is_active": True,
-        "created_at": date,
-        "updated_at": date,
-    }
-    db.users.insert_one(user_data) """
+    
+    # Insert user with all default values automatically handled
+    result = db.users.insert_one(new_user.to_mongo())
+    user_id = result.inserted_id
+    
+    # Create token
+    token = str(uuid4())
     db.tokens.create_index([("expire_at", 1)], expireAfterSeconds=0)
-    db.tokens.insert_one({"user_id": new_user["_id"], "token": token, "expire_at": datetime.now() + timedelta(hours=1)})
+    db.tokens.insert_one({
+        "user_id": user_id,
+        "token": token,
+        "expire_at": datetime.now() + timedelta(hours=1)
+    })
 
+    # Send verification email
     verification_url = f'{FRONT_URL}/verify/{token}'
     subject = "Email Verification"
     body = f'Click the link to verify your email: {verification_url}'
@@ -58,13 +47,15 @@ async def register_user(user):
     try:
         smtp_utils.send_email(subject, body, [user.email])
     except HTTPException as e:
-        return { 
-            "status" : False,
-            "message" :"Failed to send verification email"
+        return {
+            "status": False,
+            "message": "Failed to send verification email"
         }
 
-    return {"status": True, "message": "Registration successful. Check your email for verification."}
-
+    return {
+        "status": True,
+        "message": "Registration successful. Check your email for verification."
+    }
 
 def login_user(user, response):
     db_user = db.users.find_one({"email": user.email})
@@ -161,6 +152,27 @@ def logout_user(token, response):
     invalidate_session(token)
     response.delete_cookie("access_token")
     return {"message": "Logged out successfully"}
+
+def update_profile(usrName, user_data):
+    update_data = user_data.model_dump()
+    update_data["updated_at"] = datetime.now()
+
+    result = db.user.find_one_and_update(
+            {"email": usrName},
+            {"$set": update_data},
+            return_document=True
+        )
+    if result is None:
+        return {
+            "status" : False,
+            "message" : f"User with email {usrName} not found"
+        }
+        
+    return {
+        "status": "success",
+        "message": "Profile updated successfully",
+    }
+
 
 def save_pic(
         pic_data: str,

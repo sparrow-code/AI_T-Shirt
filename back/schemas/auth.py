@@ -1,3 +1,4 @@
+from bson import ObjectId
 from pydantic import BaseModel, EmailStr
 
 class UserRegister(BaseModel):
@@ -21,3 +22,22 @@ class ProfilePicResponse(BaseModel):
     status: bool
     message: str
     url: str
+
+class UserRequest(BaseModel):
+    name: str
+    profession: str
+    country: str
+    address: str
+    location: str
+    phone: str
+    web: str
+
+    class Config:
+        arbitrary_types_allowed = True
+        json_encoders = {
+            ObjectId: str
+        }
+
+    def to_mongo(self) -> dict:
+        """Convert the model to a MongoDB-ready dictionary"""
+        return self.model_dump(exclude_unset=True)
