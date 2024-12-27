@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, Response, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from schemas.auth import *
-from controller.auth import get_user_details, login_user, logout_user, register_user, verify_token
+from controller.auth import get_user_details, login_user, logout_user, register_user, save_pic, verify_token
 from datetime import datetime
+
+from utils.auth import decode_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 router = APIRouter()
@@ -39,3 +41,18 @@ def me(token: str = Depends(oauth2_scheme)):
 @router.get("/logout",  summary="Logout user", description="This endpoint requires an Authorization header with a Bearer token.")
 def logout(response: Response, token: str = Depends(oauth2_scheme)):
     return logout_user(token, response)
+
+@router.post("/upload/profile-pic")
+async def upload_profile_pic(pic_data: ProfilePicUpload, response : Response, token: str = Depends(oauth2_scheme)):
+    current_user = decode_access_token(token)
+    usrName = current_user["sub"].split("@")[0]
+    username = usrName.sub(r'[<>:"/\\|?*]', '_', usrName)
+
+    return save_pic(pic_data.pic_object,
+                    username,
+                    max_file_size_mb=5,
+                    allowed_formats={'jpeg', 'png', 'gif'},
+                    max_dimension=2000)
+
+
+    

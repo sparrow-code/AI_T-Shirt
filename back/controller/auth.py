@@ -1,4 +1,6 @@
+from io import BytesIO
 from uuid import uuid4
+from PIL import Image
 from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from utils.db import db
@@ -143,7 +145,79 @@ def logout_user(token, response):
     user_data = verify_token(token)
     if not user_data:
         raise HTTPException(status_code=401, detail="Invalid token")
-
+    
     invalidate_session(token)
     response.delete_cookie("access_token")
     return {"message": "Logged out successfully"}
+
+def save_pic(
+        pic_data: str,
+        username: str,
+        max_file_size_mb: int = 5,
+        allowed_formats: set = {'jpeg', 'png', 'gif'},
+        max_dimension: int = 2000):
+            # Create directory if not exists
+            output_dir = f"/output/{username}"
+            os.makedirs(output_dir, exist_ok=True)
+
+            try:
+                # Decode the base64 encoded image data
+                image_data = base64.b64decode(pic_data)
+                image = Image.open(BytesIO(image_data))
+            except Exception as e:
+                return {
+                    "status": False,
+                    "message": "Invalid image data"
+                }
+
+            # Validate image format
+            if image.format.lower() not in allowed_formats:
+                return {
+                    "status": False,
+                    "message": f"Unsupported file format. Allowed formats are {', '.join(allowed_formats)}"
+                }
+
+            # Validate image size
+            if len(image_data) > max_file_size_mb * 1024 * 1024:
+                return {
+                    "status": False,
+                    "message": f"File size exceeds the {max_file_size_mb} MB limit"
+                }
+
+            # Validate image dimensions
+            if image.width > max_dimension or image.height > max_dimension:
+                return {
+                    "status": False,
+                    "message": f"Image dimensions exceed the {max_dimension}x{max_dimension} limit"
+                }
+
+            # Generate filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"profile_{timestamp}.{image.format.lower()}"
+            file_path = os.path.join(output_dir, filename)
+
+            try:
+                # Save the image to the directory
+                image.save(file_path)
+            except Exception:
+                return {
+                    "status": False,
+                    "message": "Failed to save image"
+                }
+
+            # Clean up old profile pictures
+            for old_file in os.listdir(output_dir):
+                if old_file.startswith("profile_") and old_file != filename:
+                    try:
+                        os.remove(os.path.join(output_dir, old_file))
+                    except Exception:
+                        pass  # Ignore errors in cleanup
+
+            # Generate URL for the saved image
+            image_url = f"/images/{username}/{filename}"
+
+            return {
+                "status": True,
+                "message": "Profile picture uploaded successfully",
+                "url": image_url
+            }
