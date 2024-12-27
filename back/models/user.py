@@ -1,24 +1,22 @@
-from bson import ObjectId
+from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
+from beanie import Document, Indexed
+from bson import ObjectId
 
-class PyObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid ObjectId")
-        return ObjectId(v)
-
-class UserInDB(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    email: EmailStr
+class User(Document):
+    name: str
+    email: str = Indexed(str, unique=True)  # Correct way to define unique index in Beanie
     hashed_password: str
-    role: str = "user"  # Default role
+    profile_pic: Optional[str] = ""
+    profession: Optional[str] = ""
+    country: str = "Choose Your Country"
+    address: Optional[str] = ""
+    location: Optional[str] = ""
+    phone: Optional[str] = ""
+    credits: int = 0
+    is_verify: bool = False
+    role: str = "user"
     is_active: bool = True
-
-    class Config:
-        json_encoders = {ObjectId: str}
-        arbitrary_types_allowed = True
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)

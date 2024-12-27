@@ -45,11 +45,10 @@ def logout(response: Response, token: str = Depends(oauth2_scheme)):
 @router.post("/upload/profile-pic")
 async def upload_profile_pic(pic_data: ProfilePicUpload, response : Response, token: str = Depends(oauth2_scheme)):
     current_user = decode_access_token(token)
-    usrName = current_user["sub"].split("@")[0]
-    username = usrName.sub(r'[<>:"/\\|?*]', '_', usrName)
+    usrName = current_user["sub"]
 
     return save_pic(pic_data.pic_object,
-                    username,
+                    usrName,
                     max_file_size_mb=5,
                     allowed_formats={'jpeg', 'png', 'gif'},
                     max_dimension=2000)

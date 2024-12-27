@@ -1,8 +1,10 @@
 from io import BytesIO
+import re
 from uuid import uuid4
 from PIL import Image
 from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
+from models.user import User
 from utils.db import db
 from utils.auth import *
 from datetime import datetime, timedelta, timezone
@@ -10,7 +12,7 @@ from utils.smtp import smtp_utils
 from bson import ObjectId
 from utils.setup import logger
 
-def register_user(user):
+async def register_user(user):
     if db.users.find_one({"email": user.email}):
         return {
             "status": False,
@@ -20,20 +22,34 @@ def register_user(user):
     hashed_password = hash_password(user.password)
     date = datetime.now()
     token = str(uuid4())
-    user_data = {
+    new_user = User(
+        name = user.name,
+        email = user.email,
+        hashed_password= hashed_password,
+        created_at= date,
+        updated_at= date,
+    )
+    await new_user.save()
+    """     user_data = {
         "name" : user.name,
         "email": user.email,
         "hashed_password": hashed_password,
-        "created_at": date,
-        "updated_at": date,
+        "profile_pic" : "",
+        "profession" : "",
+        "country": "Choose Your Country",
+        "address": "",
+        "location": "",
+        "phone": "",
         "credits" : 0,
         "is_verify" : False,
         "role": "user",
         "is_active": True,
+        "created_at": date,
+        "updated_at": date,
     }
-    db.users.insert_one(user_data)
+    db.users.insert_one(user_data) """
     db.tokens.create_index([("expire_at", 1)], expireAfterSeconds=0)
-    db.tokens.insert_one({"user_id": user_data["_id"], "token": token, "expire_at": datetime.now() + timedelta(hours=1)})
+    db.tokens.insert_one({"user_id": new_user["_id"], "token": token, "expire_at": datetime.now() + timedelta(hours=1)})
 
     verification_url = f'{FRONT_URL}/verify/{token}'
     subject = "Email Verification"
@@ -141,24 +157,22 @@ def verify_token(token, response):
         "message" : "User verified successfully"
     }
 
-def logout_user(token, response):
-    user_data = verify_token(token)
-    if not user_data:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
+def logout_user(token, response):    
     invalidate_session(token)
     response.delete_cookie("access_token")
     return {"message": "Logged out successfully"}
 
 def save_pic(
         pic_data: str,
-        username: str,
+        usrName: str,
         max_file_size_mb: int = 5,
         allowed_formats: set = {'jpeg', 'png', 'gif'},
         max_dimension: int = 2000):
+            usrName = usrName.split("@")[0]
+            username = re.sub(r'[<>:"/\\|?*]', '_', usrName)
             # Create directory if not exists
-            output_dir = f"/output/{username}"
-            os.makedirs(output_dir, exist_ok=True)
+            output_dir = OUTPUTS_DIR / username
+            output_dir.mkdir(parents=True, exist_ok=True)
 
             try:
                 # Decode the base64 encoded image data
@@ -215,6 +229,10 @@ def save_pic(
 
             # Generate URL for the saved image
             image_url = f"/images/{username}/{filename}"
+            db.users.find_one_and_update(
+                {"email": usrName}, 
+                {"$set": {"profile_pic": image_url}}
+            )
 
             return {
                 "status": True,

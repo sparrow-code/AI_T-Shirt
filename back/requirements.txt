@@ -34,8 +34,8 @@ flatbuffers>=24.3.25
 numba>=0.58.1
 llvmlite>=0.42.0
 
+beanie>=1.28.0
 pymongo>=4.10.1 # DB
-stripe>=11.3.0 # Payment
 
 # Additional dependencies
 python-jose[cryptography]>=3.3.0
