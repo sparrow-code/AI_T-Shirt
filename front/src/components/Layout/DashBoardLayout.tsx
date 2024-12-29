@@ -1,11 +1,13 @@
 import { PropsWithChildren, Suspense, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import "../../tailwind.css";
-import { IRootState } from "../../store";
+import store, { IRootState } from "../../store";
 import { toggleSidebar } from "../../store/themeConfigSlice";
 import Header from "./auth/Header";
 import Sidebar from "./auth/Sidebar";
 import Portals from "../../components/Portals";
+
+import "react-perfect-scrollbar/dist/css/styles.css";
 
 const DashBoardLayout = ({ children }: PropsWithChildren) => {
   const themeConfig = useSelector((state: IRootState) => state.themeConfig);
@@ -47,7 +49,13 @@ const DashBoardLayout = ({ children }: PropsWithChildren) => {
   }, []);
 
   return (
-    <>
+    <div
+      className={`${
+        (store.getState().themeConfig.sidebar && "toggle-sidebar") || ""
+      } ${themeConfig.menu} ${themeConfig.layout} ${
+        themeConfig.rtlClass
+      } main-section antialiased relative font-nunito text-sm font-normal`}
+    >
       {/* BEGIN MAIN CONTAINER */}
       <div className="relative">
         {/* sidebar menu overlay */}
@@ -137,7 +145,7 @@ const DashBoardLayout = ({ children }: PropsWithChildren) => {
           {/* END CONTENT AREA */}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -4,15 +4,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { setPageTitle } from "../store/themeConfigSlice";
 import { AppDispatch, IRootState } from "../store";
 import { clearError, loginUser } from "../store/AuthSlice";
+import { useAuth } from "../hooks/useAuth";
 
 export default function LoginPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || "/dashboard";
-  const isAuthenticated = useSelector(
-    (state: any) => state.auth.isAuthenticated
-  );
+  const { initializeAuth, isAuthenticated } = useAuth();
   useEffect(() => {
     dispatch(setPageTitle("Login"));
     if (isAuthenticated) {
@@ -36,11 +35,22 @@ export default function LoginPage() {
 
     try {
       await dispatch(clearError());
-      await dispatch(loginUser(formData)); // Correctly typed thunk action
-      navigate(from); // Redirect on successful login
+      const resultAction = await dispatch(loginUser(formData));
+
+      if (loginUser.fulfilled.match(resultAction)) {
+        await initializeAuth();
+
+        const response = resultAction.payload;
+        if (response.status) {
+          alert(response.message || "Login successful!");
+        } else {
+          alert(response.message || "Login failed!");
+        }
+      }
+      navigate(from, { replace: true });
     } catch (error: any) {
       console.error("Login failed:", error);
-      alert(error); // Show error to user
+      alert(error);
     }
   };
   return (

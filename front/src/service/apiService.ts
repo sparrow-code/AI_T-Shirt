@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+import Cookie from '../utils/cookie';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const MAX_RETRIES = 2;
@@ -16,12 +17,20 @@ class ApiService {
       timeout: 120000, // 120 seconds
     });
 
+    this.api.interceptors.request.use((config) => {
+      const token = Cookie.get("access_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
 
     // Add response interceptor for error handling
     this.api.interceptors.response.use(
       (response: AxiosResponse) => response,
       (error: AxiosError) => this.handleError(error)
     );
+
   }
 
   private async delay(ms: number): Promise<void> {

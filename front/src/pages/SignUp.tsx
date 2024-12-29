@@ -1,21 +1,56 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { setPageTitle } from "../store/themeConfigSlice";
 import { AppDispatch, IRootState } from "../store";
-import { signupUser, clearError } from "../store/AuthSlice";
+import { signupUser, clearError, verifyToken } from "../store/AuthSlice";
+import { useAuth } from "../hooks/useAuth";
 
 const SignupPage = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const [submit, setSubmit] = useState(false);
+  const navigate = useNavigate();
+  const { token } = useParams();
+  const { initializeAuth, isAuthenticated } = useAuth();
+  const [submit, setSubmit] = useState({
+    submit: false,
+    step: token ? 2 : 0,
+  });
   useEffect(() => {
     dispatch(setPageTitle("Register"));
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
   });
-  const navigate = useNavigate();
   const isDark =
     useSelector((state: IRootState) => state.themeConfig.theme) === "dark"
       ? true
       : false;
+
+  useEffect(() => {
+    if (token) {
+      handleTokenVerification();
+    }
+  }, []);
+
+  const handleTokenVerification = async () => {
+    if (!token) return;
+
+    try {
+      dispatch(clearError());
+      const resultAction = await dispatch(verifyToken(token));
+
+      if (verifyToken.fulfilled.match(resultAction)) {
+        const response = resultAction.payload;
+        if (response.status) {
+          alert(response.message || "Email verification successful!");
+          await initializeAuth();
+          navigate("/dashboard", { replace: true });
+        }
+      }
+    } catch (error) {
+      console.error("Token verification failed:", error);
+    }
+  };
 
   const submitForm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,7 +70,7 @@ const SignupPage = () => {
         const response = resultAction.payload;
 
         if (response.status) {
-          setSubmit(true);
+          setSubmit({ submit: true, step: 1 });
           alert(response.message);
         } else {
           alert(response.message);
@@ -52,9 +87,9 @@ const SignupPage = () => {
 
   return (
     <div>
-      <div className="flex justify-center items-center min-h-screen bg-cover bg-center bg-[url('/assets/images/map.svg')] dark:bg-[url('/assets/images/map-dark.svg')]">
+      <div className="flex justify-center items-center min-h-screen bg-cover bg-center bg-[url('https://react.vristo.sbthemes.com/assets/images/auth/map.png')] dark:bg-[url('https://react.vristo.sbthemes.com/assets/images/auth/map.png')]">
         <div className="panel sm:w-[480px] m-6 max-w-lg w-full">
-          {!submit ? (
+          {submit.step === 0 ? (
             <>
               <h2 className="font-bold text-2xl mb-3">Sign Up</h2>
               <p className="mb-7">Enter your email and password to register</p>
@@ -206,11 +241,12 @@ const SignupPage = () => {
                 </Link>
               </p>
             </>
+          ) : submit.step === 1 ? (
+            <LinkSend />
+          ) : submit.step === 2 ? (
+            <ProcessWithToken />
           ) : (
-            <>
-              Please Check You Email We Have Just Send Verification Link on Your
-              E-Mail
-            </>
+            <>Invalid Steps</>
           )}
         </div>
       </div>
@@ -218,4 +254,15 @@ const SignupPage = () => {
   );
 };
 
+const ProcessWithToken = () => {
+  return <>Verified Successfull</>;
+};
+
+const LinkSend = () => {
+  return (
+    <>
+      Please Check You Email We Have Just Send Verification Link on Your E-Mail
+    </>
+  );
+};
 export default SignupPage;
