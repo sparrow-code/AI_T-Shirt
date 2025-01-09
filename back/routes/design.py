@@ -24,10 +24,8 @@ async def save_design(request: dict = Body(...)):
     return await ImageSevice.save_design_history(request)
 
 @router.post("/generate", summary="Generate AI Image", description="It will Only Generate Image using AI")
-async def generate(request: ImageGenerateRequest,  token: str = Depends(oauth2_scheme)):
+async def generate(request: ImageGenerateRequest):
     request_data = request.dict()
-    current_user = decode_access_token(token)
-    username = current_user["sub"].split("@")[0]
     return await ImageSevice.generate_image(request_data)
 
 @router.post("/remove-background")

@@ -141,10 +141,10 @@ class ImgProcessing :
             # Wait for the result (with timeout)
             result = await task_queue.wait_for_result(task_id, timeout=120)  # Increased timeout to 120 seconds
             
-            if result and result.get("image_url"):
+            if result and result.get("image_data"):
                 return JSONResponse({
                     "result": {
-                        "image_url": result["image_url"],
+                        "image_url": result["image_data"],
                         "task_id": task_id
                     }
                 })
