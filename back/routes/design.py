@@ -17,7 +17,7 @@ async def get_history():
 @router.post("/save", summary="Need To Code", description="Save A Design To History")
 async def save_design(design_data: dict):
     """Save a design to history."""
-    return await ImageSevice.save_design(design_data, design_history)
+    return await ImageSevice.save_design_memory(design_data, design_history)
 
 @router.post("/save/history", summary="Save to History", description="Save A Design To History")
 async def save_design(request: dict = Body(...)):

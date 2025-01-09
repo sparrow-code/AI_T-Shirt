@@ -198,8 +198,10 @@ class ImgProcessing :
             raise HTTPException(status_code=500, detail=str(e))
     
     # ! Dead
-    async def save_design(self, design_data, design_history) -> bytes:
+    async def save_design_memory(self, design_data, design_history) -> bytes:
         try:
+            logger.debug(f"Saving to history Memory")
+            logger.debug(f"Received request")
             if "image_data" not in design_data:
                 raise HTTPException(status_code=400, detail="No image data provided")
 
