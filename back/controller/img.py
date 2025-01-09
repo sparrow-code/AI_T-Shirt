@@ -28,42 +28,42 @@ class ImgProcessing :
     def __init__(self) -> None:
         pass
 
-async def remove_bg(self, request) -> bytes:
-    try:
-        # Extract image data and validate
-        image_data = request.get("image_data")
-        if not image_data:
-            raise HTTPException(status_code=400, detail="image_data is required")
+    async def remove_bg(self, request) -> bytes:
+        try:
+            # Extract image data and validate
+            image_data = request.get("image_data")
+            if not image_data:
+                raise HTTPException(status_code=400, detail="image_data is required")
 
-        # Check if the base64 string has the correct format
-        if not image_data.startswith("data:image"):
-            # Add base64 header if missing
-            image_data = "data:image/jpeg;base64," + image_data
+            # Check if the base64 string has the correct format
+            if not image_data.startswith("data:image"):
+                # Add base64 header if missing
+                image_data = "data:image/jpeg;base64," + image_data
 
-        # Remove the base64 prefix to get just the encoded data
-        base64_data = image_data.split(",")[1]
-        
-        image_bytes = base64.b64decode(base64_data)
-        image = Image.open(BytesIO(image_bytes))
-        
-        # Remove background
-        output_image = remove(image)
-        
-        # Convert the output image to bytes
-        output_buffer = BytesIO()
-        output_image.save(output_buffer, format='PNG')
-        processed_image_data = output_buffer.getvalue()
-        
-        # Convert back to base64 for response
-        processed_base64 = base64.b64encode(processed_image_data).decode('utf-8')
-        
-        return JSONResponse({
-            "bg_remove_data": f"data:image/png;base64,{processed_base64}"
-        })
+            # Remove the base64 prefix to get just the encoded data
+            base64_data = image_data.split(",")[1]
+            
+            image_bytes = base64.b64decode(base64_data)
+            image = Image.open(io.BytesIO(image_bytes))
+            
+            # Remove background
+            output_image = remove(image)
+            
+            # Convert the output image to bytes
+            output_buffer = io.BytesIO()
+            output_image.save(output_buffer, format='PNG')
+            processed_image_data = output_buffer.getvalue()
+            
+            # Convert back to base64 for response
+            processed_base64 = base64.b64encode(processed_image_data).decode('utf-8')
+            
+            return JSONResponse({
+                "bg_remove_data": f"data:image/png;base64,{processed_base64}"
+            })
 
-    except Exception as e:
-        logger.error(f"Error in background removal: {e}")
-        raise HTTPException(status_code=500, detail="Background removal failed.")
+        except Exception as e:
+            logger.error(f"Error in background removal: {e}")
+            raise HTTPException(status_code=500, detail="Background removal failed.")
 
     async def color_transparency(self, file, color: str, tolerance: float) -> bytes:
         try:        
