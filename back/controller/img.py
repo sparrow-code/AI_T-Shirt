@@ -31,9 +31,9 @@ class ImgProcessing :
     async def remove_bg(self, request) -> bytes:
         try:
             # Extract image data and validate
-            image_data = request.get("image_data")
+            image_data = request.get("image")
             if not image_data:
-                raise HTTPException(status_code=400, detail="image_data is required")
+                raise HTTPException(status_code=400, detail="image is required")
 
             # Check if the base64 string has the correct format
             if not image_data.startswith("data:image"):
