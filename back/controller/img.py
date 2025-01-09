@@ -144,7 +144,7 @@ class ImgProcessing :
             if result and result.get("image_data"):
                 return JSONResponse({
                     "result": {
-                        "image_url": result["image_data"],
+                        "image_data": result["image_data"],
                         "task_id": task_id
                     }
                 })
