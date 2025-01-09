@@ -42,10 +42,6 @@ async def remove_bg(self, request) -> bytes:
 
         # Remove the base64 prefix to get just the encoded data
         base64_data = image_data.split(",")[1]
-
-        # Decode base64 to bytes
-        import base64
-        from io import BytesIO
         
         image_bytes = base64.b64decode(base64_data)
         image = Image.open(BytesIO(image_bytes))
