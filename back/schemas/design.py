@@ -18,7 +18,7 @@ class ImageGenerateRequest(BaseModel):
     priority: Optional[int] = Field(default=1, example=1, description="Priority level of the request")
 
 class BGRemoveRequest(BaseModel) :
-    image_url: str = Field(..., example="/image/username/image.png", description="URL of the image to process")
+    image_data: str = Field(..., example="BASE 64 String", description="URL of the image to process")
     model: str = Field("u2net", example="u2net", description="The model to use for image processing")
     return_mask: bool = Field(False, example=False, description="Whether to return the mask")
     transparency: float = Field(0.0, ge=0.0, le=1.0, example=0.0, description="Transparency level (0.0 to 1.0)")
