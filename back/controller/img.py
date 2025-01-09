@@ -253,36 +253,61 @@ class ImgProcessing :
         
     async def save_design_history(self, request) -> bytes:
         try:
+            # Ensure OUTPUTS_DIR exists
+            OUTPUTS_DIR.mkdir(exist_ok=True, parents=True)
             history_file = OUTPUTS_DIR / "history.json"
             
+            logger.debug(f"Saving to history file: {history_file}")
+            logger.debug(f"Received request: {request}")
+
             # Load existing history or create new
             if history_file.exists():
                 try:
-                    with open(history_file, "r") as f:
+                    with open(history_file, "r", encoding='utf-8') as f:
                         history = json.load(f)
-                except json.JSONDecodeError:
+                        logger.debug(f"Loaded existing history with {len(history)} items")
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Could not decode existing history file: {e}")
                     history = []
             else:
+                logger.debug("No existing history file, creating new")
                 history = []
             
+            # Validate request data
+            if not isinstance(request, dict):
+                raise ValueError("Request must be a dictionary")
+            
+            if "image_data" not in request:
+                raise ValueError("image_data is required in request")
+
             # Create new history item
             new_item = {
                 "id": str(uuid.uuid4()),
-                "image_data": request["image_url"],
+                "image_data": request["image_data"],
                 "prompt": request.get("prompt", ""),
                 "created_at": datetime.utcnow().isoformat(),
                 "transform": request.get("transform", None)
             }
             
+            logger.debug(f"Created new history item: {new_item}")
+
             # Add to history and save
             history.append(new_item)
-            with open(history_file, "w") as f:
-                json.dump(history, f)
-                
-            return JSONResponse({"status": "success", "id": new_item["id"]})
+            
+            # Save with proper formatting and encoding
+            with open(history_file, "w", encoding='utf-8') as f:
+                json.dump(history, f, indent=2, ensure_ascii=False)
+            
+            logger.debug(f"Successfully saved history with {len(history)} items")
+            
+            return JSONResponse({
+                "status": "success", 
+                "id": new_item["id"],
+                "total_items": len(history)
+            })
             
         except Exception as e:
-            logger.error(f"Error saving to history: {str(e)}")
+            logger.error(f"Error saving to history: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail=str(e))
     
     async def get_design_history(self) -> bytes:
