@@ -25,7 +25,7 @@ class TaskQueue:
         self.completed_tasks = {}  # type: Dict[str, dict]
         self.failed_tasks = set()  # type: Set[str]
         self.task_timeout = 300  # 5 minutes
-        self.api_url = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large"
+        self.api_url = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large-turbo"
         self.api_headers = {"Authorization": "Bearer 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"}
         self.api_timeout = 120  # 2 minutes for API requests
         
